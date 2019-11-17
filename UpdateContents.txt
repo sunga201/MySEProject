@@ -1,0 +1,52 @@
+11/12
+
+-Change 'ShowMenu' class
+   Add attribute 'sd', 'smd'  (If not added, 'SaveData' or 'ShowMapData' window closes immediately.)
+
+- Create 'SaveData' class
+   - Create mapDataSave method
+   - Create showMessage method
+
+- Create ShowMapData class
+   
+
+- Change Map_data class to static class
+   - Channge map_size, start_spot, object_spot, hazard_spot, hazard_spot_h, color blob_h to static attribute
+   - Change set_hidden_data, get_hazard_h, get_cb_h, get_map_size, get_object_spot, get_hazard_spot, remove_hidden_spot to static method
+
+11/13
+
+- Update 'SaveData' class
+    - Delete showMessage method
+
+- Create 'Show_result' class
+    - Create method
+        - __init__()
+        - show_map() -> matplotlib + PyQt5
+
+11/15
+
+- Update 'ShowResult' class
+    - Create method
+         - drawPath() : draw saved path on map.
+         - removePath() : remove already drawn path on map.
+
+11/16
+- Update 'ShowResult' class
+    - Create method
+         - showRobotMovement() : show robot movement following the current path every one second on map.
+
+11/17
+- Create 'MessageController' class
+    - Create method
+         - showMessage(object, message, toggle) : Show message on object with messagebox. Close object when toggle value is 1.
+
+- Update 'ShowResult' class
+    - Create method
+         - generateRandomSpot() : Generate random hazard spot and color blob spot on unused point.
+         - changePath() : overwrite current saved path with new path and draw new path on map.
+         
+-Updata 'Save Data' class
+    - Change method name
+         - mapDataSave -> saveInputData
+         

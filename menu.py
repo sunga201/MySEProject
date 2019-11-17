@@ -1,5 +1,6 @@
 #import control_robot
 import sys
+import random
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QCoreApplication
@@ -8,47 +9,56 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import tkinter
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
-class Map_data: #static class
-    def __init__(self, map_size, start_spot, object_spot, hazard_spot):
-        Map_data.map_size=map_size
-        Map_data.start_spot=start_spot
-        Map_data.object_spot=object_spot
-        Map_data.hazard_spot=hazard_spot
-        Map_data.hazard_spot_h=[]
-        Map_data.color_blob_h=[]
+#Use to determine behavior after press 'OK' button on message box.
+CLOSE=1
+NOT_CLOSE=0
 
-    def set_hidden_data(hazard, cb):
-        Map_data.hazard_spot_h.append(hazard)
-        Map_data.color_blob_h.append(cb)
+class MessageController: #static class
+    def showMessage(object, message, toggle): #static method, show message to operator.
+        msg = QMessageBox.question(object, 'error', message, QMessageBox.Ok)
+        if toggle: object.close()
 
-    def get_hazard_h():
-        return Map_data.hazard_spot_h
+class MapData: #static class
+    def __init__(self, mapSize=(10, 10), startSpot=(1, 2), objectSpot=[(4, 2), (1, 5)], hazardSpot=[(1, 0), (3, 2), (4, 1)]): #revise (initial data remove)
+        MapData.mapSize=mapSize
+        print(MapData.mapSize)
+        MapData.startSpot=startSpot
+        MapData.objectSpot=objectSpot
+        MapData.hazardSpot=hazardSpot
+        MapData.hazardSpotH=[]
+        MapData.colorBlobH=[]
 
-    def get_cb_h():
-        return Map_data.color_blob_h
+    def setHiddenData(hazard, cb):
+        MapData.hazardSpotH.append(hazard)
+        MapData.colorBlobH.append(cb)
 
-    def get_map_size():
-        return Map_data.map_size
+    def getHazardH():
+        return MapData.hazardSpotH
 
-    def get_start_spot():
-        return Map_data.start_spot
+    def getColorblobH():
+        return MapData.colorBlobH
 
-    def get_object_spot():
-        return Map_data.object_spot
+    def getMapSize():
+        return MapData.mapSize
 
-    def get_hazard_spot():
-        return Map_data.hazard_spot
+    def getStartSpot():
+        return MapData.startSpot
 
-    def remove_hidden_spot(point):
-        for h in Map_data.hazard_spot_h:
+    def getObjectSpot():
+        return MapData.objectSpot
+
+    def getHazardSpot():
+        return MapData.hazardSpot
+
+    def removeHiddenSpot(point):
+        for h in MapData.hazardSpotH:
             if point==h:
-                Map_data.hazard_spot_h.remove(h)
+                MapData.hazardSpotH.remove(h)
 
 
-class Save_data(QWidget):
+class SaveData(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Save data")
@@ -56,77 +66,77 @@ class Save_data(QWidget):
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
 
-        map_label = QLabel("Map : ")
-        start_label = QLabel("Start : ")
-        spot_label = QLabel("Object : ")
-        hazard_label = QLabel("Hazard : ")
-        self.map_line = QLineEdit("")
-        self.start_line = QLineEdit("")
-        self.spot_line = QLineEdit("")
-        self.hazard_line = QLineEdit("")
+        mapLabel = QLabel("Map : ")
+        startLabel = QLabel("Start : ")
+        spotLabel = QLabel("Object : ")
+        hazardLabel = QLabel("Hazard : ")
+        self.mapLine = QLineEdit("")
+        self.startLine = QLineEdit("")
+        self.spotLine = QLineEdit("")
+        self.hazardLine = QLineEdit("")
 
-        ok_button = QPushButton('Save', self)
-        ok_button.clicked.connect(self.map_data_save)
-        cancel_button = QPushButton('cancel', self)
-        cancel_button.clicked.connect(self.close)
+        okButton = QPushButton('Save', self)
+        okButton.clicked.connect(self.saveInputData)
+        cancelButton = QPushButton('cancel', self)
+        cancelButton.clicked.connect(self.close)
 
         layout1 = QGridLayout()
-        layout1.addWidget(map_label, 0, 0)
-        layout1.addWidget(self.map_line, 0, 1)
-        layout1.addWidget(start_label, 1, 0)
-        layout1.addWidget(self.start_line, 1, 1)
-        layout1.addWidget(spot_label, 2, 0)
-        layout1.addWidget(self.spot_line, 2, 1)
-        layout1.addWidget(hazard_label, 3, 0)
-        layout1.addWidget(self.hazard_line, 3, 1)
-        layout1.addWidget(ok_button, 4, 0)
-        layout1.addWidget(cancel_button, 4, 1)
+        layout1.addWidget(mapLabel, 0, 0)
+        layout1.addWidget(self.mapLine, 0, 1)
+        layout1.addWidget(startLabel, 1, 0)
+        layout1.addWidget(self.startLine, 1, 1)
+        layout1.addWidget(spotLabel, 2, 0)
+        layout1.addWidget(self.spotLine, 2, 1)
+        layout1.addWidget(hazardLabel, 3, 0)
+        layout1.addWidget(self.hazardLine, 3, 1)
+        layout1.addWidget(okButton, 4, 0)
+        layout1.addWidget(cancelButton, 4, 1)
 
         self.setLayout(layout1)
         self.show()
 
-    def map_data_save(self):
-        map_size=self.map_line.text()
-        start=self.start_line.text()
-        spot=self.spot_line.text()
-        hazard=self.hazard_line.text()
+    def saveInputData(self):
+        mapSize=self.mapLine.text()
+        start=self.startLine.text()
+        spot=self.spotLine.text()
+        hazard=self.hazardLine.text()
 
-        if map_size=='' or start=='' or spot=='' or hazard=='':
-            self.show_message('Please check map data again.', False)
+        if mapSize=='' or start=='' or spot=='' or hazard=='':
+            MessageController.showMessage(self, 'Please check map data again.', NOT_CLOSE)
+            return
+        try:
+            mapSize=mapSize.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
+            start = start.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
+            spot = spot.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
+            hazard = hazard.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
+        except:
+            print("check!!!")
+            MessageController.showMessage(self, 'Please check map data again.', NOT_CLOSE)
             return
 
-        map_size=map_size.replace('(', ' ').replace(')', ' ').split()
-        start = start.replace('(', ' ').replace(')', ' ').split()
-        spot = spot.replace('(', ' ').replace(')', ' ').split()
-        hazard = hazard.replace('(', ' ').replace(')', ' ').split()
-
-        map_size=tuple(map(int, map_size))
+        mapSize=tuple(map(int, mapSize))
         start=tuple(map(int, start))
         spot=list(map(int, spot))
         hazard=list(map(int, hazard))
-        object_spot=[]
+        objectSpot=[]
         for i in range(0, len(spot), 2):
             print(i)
-            object_spot.append(tuple(spot[i:i+2]))
+            objectSpot.append(tuple(spot[i:i+2]))
 
-        hazard_spot=[]
+        hazardSpot=[]
         for i in range(0, len(hazard), 2):
-            hazard_spot.append(tuple(hazard[i:i+2]))
-        Map_data(map_size, start, object_spot, hazard_spot)
-        self.show_message('Save Completed.', True)
+            hazardSpot.append(tuple(hazard[i:i+2]))
+        MapData(mapSize, start, objectSpot, hazardSpot)
+        MessageController.showMessage(self, 'Save Completed.', CLOSE)
 
-    def show_message(self, message, toggle):
-        msg = QMessageBox.question(self, 'error', message, QMessageBox.Ok)
-        if toggle: self.close()
-
-class Show_map_data(QWidget):
+class ShowMapData(QWidget):
     def __init__(self):
         super().__init__()
-        map_size=Map_data.get_map_size()
-        start_spot=Map_data.get_start_spot()
-        object_spot=Map_data.get_object_spot()
-        hazard_spot=Map_data.get_hazard_spot()
-        print(map_size, start_spot, object_spot, hazard_spot)
+        mapSize=MapData.getMapSize()
+        startSpot=MapData.getStartSpot()
+        objectSpot=MapData.getObjectSpot()
+        hazardSpot=MapData.getHazardSpot()
+        print(mapSize, startSpot, objectSpot, hazardSpot)
 
         self.setWindowTitle("Show map data")
         self.setWindowIcon(QIcon('titleIcon.png'))
@@ -135,128 +145,225 @@ class Show_map_data(QWidget):
         self.show()
 
 
-class Show_result(QWidget):
+class ShowResult(QWidget):
     def __init__(self):
         super().__init__()
         np.random.seed(int(time.time()))
-        #self.prev_position=Map_data.get_start_spot()
-        self.map_size=(4, 5) # temp
-        self.prev_position=(1, 2)# temp
-        self.hazard_spot=[(1, 0), (3, 2)] # temp
-        self.object_spot=[(4, 2), (1, 5)] # temp
-        self.generate_random_spot()
-        #self.add_on=comtrol_robot.Add_on();
-        self.show_map()
+        MapData()  # temp
+        self.mapSize=MapData.getMapSize()
+        self.prevPosition=MapData.getStartSpot()
+        self.hazardSpot=MapData.getHazardSpot()
+        self.objectSpot=MapData.getObjectSpot()
+        self.drawedLines = []
+        self.generateRandomSpot()
+        self.objCnt=len(self.objectSpot)
+        #self.add_on=control_robot.Add_on();
+        self.showMap()
 
-    def show_map(self):
+    def showMap(self):
         #self.path=self.add_on.get_path()
         self.path=[(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
-        self.prev_direction=-1
-        second_minus_first=self.path[1][0]-self.path[0][0], self.path[1][1]-self.path[0][1]
-        if second_minus_first[0]==0:
-            if second_minus_first[1]>0:
-                self.direction=1
-            else: self.direction=3
+        arrowDirection=[(0, 0.4), (0.4, 0), (0, -0.4), (-0.4, 0)]
+        self.prevDirection=-1
+        self.arrowFileName=['up.png', 'right.png', 'down.png', 'left.png']
+        checkDirection=self.path[1][0]-self.path[0][0], self.path[1][1]-self.path[0][1]
+        if checkDirection[0]==0:
+            if checkDirection[1]>0:
+                self.prevDirection=0
+            else: self.prevDirection=2
         else:
-            if second_minus_first[0]>0:
-                self.direction=2
-            else: self.direction=4
-
-        print(self.direction)
+            if checkDirection[0]>0:
+                self.prevDirection=1
+            else: self.prevDirection=3
+        # 0 : up 1 : right 2 : down 3 : left
         self.setWindowTitle("Result")
         self.setWindowIcon(QIcon('titleIcon.png'))
-        self.move(500, 100)  # horizontal, vertical
-        self.resize(1000, 700)  # width, height
-
+        self.resize(1900, 1000)  # width, height
         self.fig=plt.figure()
         self.canvas=FigureCanvas(self.fig)
-        plt.grid(True)
-        plt.xlim(0, self.map_size[0]+1)
-        plt.xticks(np.arange(0, self.map_size[0]+1, step=1), color='w')
-        plt.ylim(0, self.map_size[1]+1)
-        plt.yticks(np.arange(0, self.map_size[1]+1, step=1), color='w')
+        self.mapScreen = self.fig.add_subplot(1, 1, 1)
+        self.mapScreen.grid()
+        self.robotImage=self.imageScatter(self.prevPosition[0], self.prevPosition[1], 'robot.png', zoom=0.2, ax=self.mapScreen)
+        self.arrowImage=self.imageScatter(self.prevPosition[0]+arrowDirection[self.prevDirection][0], self.prevPosition[1]+arrowDirection[self.prevDirection][1],
+                                       self.arrowFileName[self.prevDirection], zoom=0.4, ax=self.mapScreen)
 
-        plt.scatter(self.prev_position[0], self.prev_position[1], c='r', linewidths=5)
-        for h in self.hazard_spot:
+        plt.xlim(0, self.mapSize[0]+1)
+        plt.xticks(np.arange(0, self.mapSize[0]+1, step=1), color='w')
+        plt.ylim(0, self.mapSize[1]+1)
+        plt.yticks(np.arange(0, self.mapSize[1]+1, step=1), color='w')
+
+        for h in self.hazardSpot:
             plt.scatter(h[0], h[1], c='b')
 
-        for o in self.object_spot:
+        for o in self.objectSpot:
             plt.scatter(o[0], o[1], c='y')
 
         self.path = [(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (3, 5), (3, 4), (1, 4), (1, 5)]
-        self.draw_path()
+        subLayout1=QVBoxLayout()
+        subLayout1.addWidget(self.canvas)
 
-        sub_layout1=QVBoxLayout()
-        sub_layout1.addWidget(self.canvas)
+        startButton = QPushButton('start', self)
+        startButton.clicked.connect(self.showRobotMovement)
+        returnButton = QPushButton('return to menu', self)
+        returnButton.clicked.connect(self.close)
 
-        start_button = QPushButton('start', self)
-        #start_button.clicked.connect(self.)
-        return_button = QPushButton('return to menu', self)
-        return_button.clicked.connect(self.close)
+        subLayout2 = QHBoxLayout()
+        subLayout2.addWidget(startButton)
+        subLayout2.addWidget(returnButton)
 
-        sub_layout2 = QHBoxLayout()
-        sub_layout2.addWidget(start_button)
-        sub_layout2.addWidget(return_button)
-
-        main_layout=QVBoxLayout()
-        main_layout.addLayout(sub_layout1)
-        main_layout.addLayout(sub_layout2)
-        self.setLayout(main_layout)
+        mainLayout=QVBoxLayout()
+        mainLayout.addLayout(subLayout1)
+        mainLayout.addLayout(subLayout2)
+        self.setLayout(mainLayout)
         self.show()
+        self.drawPath()
 
-    def generate_random_spot(self):
-        '''hazard_num=np.random.randint(0, min((self.map_size[0]+self.map_size[1])/2, 100))
-        cb_num=np.random.randint(0, min((self.map_size[0]+self.map_size[1])/2, 100))
-        map_width = self.map_size[0]
-        map_height=self.map_size[1]
-        tmp_hazard=[]
-        tmp_cb=[]
 
-        already_used_point = self.hazard_spot + self.object_spot
-        already_used_point.append(self.prev_position)
+    def imageScatter(self, x, y, image, zoom=1, ax=None):
+        if ax is None:
+            ax = plt.gca()
+        try:
+            image = plt.imread(image)
+        except TypeError:
+            return
+        im = OffsetImage(image, zoom=zoom)
+        ab = AnnotationBbox(im, (x, y), xycoords='data', frameon=False)
+        return ax.add_artist(ab)
 
-        hidden_point=[]
-        for i in range(map_height):
-            for j in range(map_width):
-                hidden_point.append((i, j))
+    def changePath(self):
+        self.path = [(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
+        self.drawPath()
 
-        for _ in range(hazard_num):
-            tmp_hazard.append((np.random.randint(0, map_width), np.random.randint(0, map_height)));
+    def showRobotMovement(self):
+        while self.objCnt!=0:
+            time.sleep(1)
+            self.robotImage.remove()
+            self.arrowImage.remove()
+            self.robotImage=self.imageScatter(self.prevPosition[0]+1, self.prevPosition[1], 'robot.png', zoom=0.2, ax=self.mapScreen)
+            self.arrowImage=self.imageScatter(self.prevPosition[0] + 1.4, self.prevPosition[1], self.arrowFileName[self.prevDirection],
+                           zoom=0.4, ax=self.mapScreen)
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+            self.objCnt=0
 
-        for _ in range(cb_num):
-            tmp_cb.append((np.random.randint(0, map_width), np.random.randint(0, map_height)));
+    def generateRandomSpot(self):
+        visibleHazardSpot=MapData.getHazardSpot()
+        objectSpot=MapData.getObjectSpot()
+        startSpot=MapData.getStartSpot()
+        hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
+        cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
+        mapWidth = self.mapSize[0]
+        mapHeight = self.mapSize[1]
+        tmpHazard=[]
+        tmpCb=[]
 
-        print(already_used_point)
+        usedSpot = visibleHazardSpot+objectSpot
+        usedSpot.append(startSpot)
 
-        for aup in already_used_point:
-            for hp in tmp_hazard:
-                if(aup==hp):
-                    print("catched!!", aup, hp)
-        print(hazard_num, cb_num)
-        print(tmp_hazard, tmp_cb)'''
+        usableSpot=[]
+        for i in range(mapWidth+1):
+            for j in range(mapHeight+1):
+                usableSpot.append((i, j))
 
-    def draw_path(self):
+        for point in usedSpot:
+            usableSpot.remove(point)
+
+        hiddenCbSpot=random.sample(usableSpot, cbNum) #Pick random color blob spot.
+        for cbSpot in hiddenCbSpot:
+            usableSpot.remove(cbSpot)
+
+        hiddenHazardSpot=random.sample(usableSpot, hazardNum)
+        for hazardSpot in hiddenHazardSpot:
+            usableSpot.remove(hazardSpot)
+
+        totalHazardSpot=hiddenHazardSpot+visibleHazardSpot
+        totalHazardSpot=list(set(totalHazardSpot))
+        for obj in objectSpot:
+            x=obj[0]
+            y=obj[1]
+            hsNum=4 #decide maximum number of hazard spot surrounding each object spot.
+            checkSpot=[(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+            tobeRemovedSpot=(x, y-1)
+            if (x==0 and y==0) or (x==0 and y==mapHeight) or (x==mapWidth and y==0) or (x==mapWidth and y==mapHeight):
+                if x==0 and y==0:
+                    checkSpot=[(x+1, y), (x, y+1)]
+
+                elif x==0 and y==mapHeight:
+                    checkSpot=[(x+1, y), (x, y-1)]
+
+                elif x == mapWidth and y == 0:
+                    checkSpot = [(x-1, y), (x, y+1)]
+
+                else:
+                    checkSpot = [(x - 1, y), (x, y - 1)]
+
+                # pick random hazard spot that surrounds a object spot from hiddenHazardSpot list.
+                tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
+                hsNum=2
+
+            elif x==0 or x==mapWidth:
+                if x==0:
+                    checkSpot=[(x+1, y), (x, y-1), (x, y+1)]
+
+                else:
+                    checkSpot=[(x-1, y), (x, y-1), (x, y+1)]
+
+                tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
+                hsNum=3
+
+            elif y==0 or y==mapHeight:
+                if y==0:
+                    checkSpot = [(x, y+1), (x-1, y), (x+1, y)]
+
+                else:
+                    checkSpot = [(x, y - 1), (x - 1, y), (x + 1, y)]
+
+                tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
+                hsNum=3
+
+            if (len(totalHazardSpot)-len([item for item in totalHazardSpot if item not in checkSpot]))==hsNum:
+                print('catch!!, to be removed : ', tobeRemovedSpot)
+                hiddenHazardSpot.remove(tobeRemovedSpot)
+
+        print('final hidden hazard spot : ', hiddenHazardSpot)
+        print('findl cb spot : ', hiddenCbSpot)
+
+        # check if there is an overlapped point between hidden hazard spot and hidden cb spot.
+        assert len([item for item in hiddenHazardSpot if item in hiddenCbSpot])==0
+        MapData.setHiddenData(hiddenHazardSpot, hiddenCbSpot)
+
+    def drawPath(self):
+        if len(self.drawedLines)!=0:
+            self.removePath()
+
         for i in range(len(self.path)-1):
-            print(self.path[i], self.path[i+1])
             x=self.path[i+1][0]-self.path[i][0]
             y=self.path[i+1][1]-self.path[i][1]
 
             if(x==0) :
-                if(self.path[i][1]<self.path[i+1][1]) : plt.plot([self.path[i][0]]*(y+1), np.linspace(self.path[i][1], self.path[i+1][1], y+1), 'r', linewidth=5)
-                else : plt.plot([self.path[i][0]]*(-(y-1)), np.linspace(self.path[i+1][1], self.path[i][1], -(y-1)), 'r', linewidth=5)
+                if(self.path[i][1]<self.path[i+1][1]) :
+                    lines=self.mapScreen.plot([self.path[i][0]]*(y+1), np.linspace(self.path[i][1], self.path[i+1][1], y+1), 'r', linewidth=5)
+                else :
+                    lines=self.mapScreen.plot([self.path[i][0]]*(-(y-1)), np.linspace(self.path[i+1][1], self.path[i][1], -(y-1)), 'r', linewidth=5)
             else :
-                print(x, y)
                 if (self.path[i][0] < self.path[i + 1][0]):
-                    plt.plot(np.linspace(self.path[i][0], self.path[i + 1][0], x + 1), [self.path[i][1]] * (x + 1), 'r',
+                    lines=self.mapScreen.plot(np.linspace(self.path[i][0], self.path[i + 1][0], x + 1), [self.path[i][1]] * (x + 1), 'r',
                              linewidth=5)
 
                 else:
-                    print("i+1 : ", self.path[i+1][0], "i : ", self.path[i][0])
-                    plt.plot(np.linspace(self.path[i+1][0], self.path[i][0], -(x - 1)), [self.path[i][1]] * -(x - 1), 'r',
+                    lines=self.mapScreen.plot(np.linspace(self.path[i+1][0], self.path[i][0], -(x - 1)), [self.path[i][1]] * -(x - 1), 'r',
                              linewidth=5)
+            self.drawedLines+=lines #Memorize current path plot object.
+
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
 
-class Show_menu(QWidget):
+    def removePath(self):
+        for i in range(len(self.mapScreen.lines)):
+            self.mapScreen.lines[0].remove()
+
+class ShowMenu(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ADD-ON System")
@@ -264,138 +371,59 @@ class Show_menu(QWidget):
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
 
-        title_label = QLabel('------ADD-ON System------')
-        title_label.setAlignment(Qt.AlignCenter)
-        font = title_label.font()
+        titleLabel = QLabel('------ADD-ON System------')
+        titleLabel.setAlignment(Qt.AlignCenter)
+        font = titleLabel.font()
         font.setPointSize(15)
-        title_label.setFont(font)
+        titleLabel.setFont(font)
 
-        save_button = QPushButton('Save data', self)
-        save_button.clicked.connect(self.save_data)
+        saveButton = QPushButton('Save data', self)
+        saveButton.clicked.connect(self.saveData)
 
-        show_result_button = QPushButton('Show result', self)
-        show_result_button.clicked.connect(self.show_result)
-        show_data_button = QPushButton('Show map data', self)
-        show_data_button.clicked.connect(self.show_map_data)
+        showResultButton = QPushButton('Show result', self)
+        showResultButton.clicked.connect(self.showResult)
+        showDataButton = QPushButton('Show map data', self)
+        showDataButton.clicked.connect(self.showMapData)
 
-        quit_button = QPushButton('Quit', self)
-        quit_button.clicked.connect(QCoreApplication.instance().quit)
+        quitButton = QPushButton('Quit', self)
+        quitButton.clicked.connect(QCoreApplication.instance().quit)
 
-        button_list = [save_button, show_result_button, show_data_button, quit_button]
-        for bt in button_list:
+        buttonList = [saveButton, showResultButton, showDataButton, quitButton]
+        for bt in buttonList:
             bt.setMinimumHeight(70)
 
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(title_label)
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(titleLabel)
 
-        main_layout.addWidget(save_button)
-        main_layout.addStretch(3)
-        main_layout.addWidget(show_result_button)
-        main_layout.addStretch(3)
-        main_layout.addWidget(show_data_button)
-        main_layout.addStretch(3)
-        main_layout.addWidget(quit_button)
-        main_layout.addStretch(3)
-        self.setLayout(main_layout)
+        mainLayout.addWidget(saveButton)
+        mainLayout.addStretch(3)
+        mainLayout.addWidget(showResultButton)
+        mainLayout.addStretch(3)
+        mainLayout.addWidget(showDataButton)
+        mainLayout.addStretch(3)
+        mainLayout.addWidget(quitButton)
+        mainLayout.addStretch(3)
+        self.setLayout(mainLayout)
         self.show()
 
-    def save_data(self):
-        self.sd=Save_data()
 
-    def show_map_data(self):
+    def saveData(self):
+        self.sd=SaveData()
+
+    def showMapData(self):
         try:
-            test_att=Map_data.get_map_size()
+            testAtt=MapData.getMapSize()
         except AttributeError:
-            self.show_message('map data doesn\'t exist.')
+            MessageController.showMessage(self, 'map data doesn\'t exist.', NOT_CLOSE)
             return
 
-        self.smd=Show_map_data()
+        self.smd=ShowMapData()
 
-    def show_result(self):
+    def showResult(self):
         '''try:
-            test_att=Map_data.get_map_size()
+            testAtt=MapData.getMapSize()
         except AttributeError:
-            self.show_message('map data doesn\'t exist.')
+            MessageController.showMessage(self, 'map data doesn\'t exist.', NOT_CLOSE)
             return'''
 
-        self.sr=Show_result()
-
-    def show_message(self, message):
-        msg = QMessageBox.question(self, 'error', message, QMessageBox.Ok)
-
-    #def initUI(self):
-        '''mapLabel=QLabel("Map Size    ")
-        startLabel=QLabel("Start Point   ")
-        spotLabel=QLabel("Object Spot ")
-        hazardLabel=QLabel("Hazard Spot")
-        mapLine=QLineEdit("")
-        startLine=QLineEdit("")
-        spotLine=QLineEdit("")
-        hazardLine=QLineEdit("")
-        layout1=QGridLayout()
-        layout1.addWidget(mapLabel, 0, 0)
-        layout1.addWidget(mapLine, 0, 1)
-        layout1.addWidget(startLabel, 1, 0)
-        layout1.addWidget(startLine, 1, 1)
-        layout1.addWidget(spotLabel, 2, 0)
-        layout1.addWidget(spotLine, 2, 1)
-        layout1.addWidget(hazardLabel, 3, 0)
-        layout1.addWidget(hazardLine, 3, 1)'''
-        '''
-        subLayout1=QHBoxLayout()
-        subLayout1.addWidget(mapLabel)
-        subLayout1.addWidget(mapLine)
-
-        subLayout2 = QHBoxLayout()
-        subLayout2.addWidget(startLabel)
-        subLayout2.addWidget(startLine)
-
-        subLayout3 = QHBoxLayout()
-        subLayout3.addWidget(spotLabel)
-        subLayout3.addWidget(spotLine)
-
-        subLayout4 = QHBoxLayout()
-        subLayout4.addWidget(hazardLabel)
-        subLayout4.addWidget(hazardLine)
-
-        layout1.addLayout(subLayout1)
-        layout1.addLayout(subLayout2)
-        layout1.addLayout(subLayout3)
-        layout1.addLayout(subLayout4)
-        '''
-        '''gBox1=QGroupBox('input')
-        #layout1.addWidget(gBox1)
-        #self.lineEdit=QLineEdit("", self)
-        #self.lineEdit.move(80, 20)
-        #self.lineEdit.textChanged.connect(self.lineEditChanged)
-
-        gBox1.setLayout(layout1)
-        gBox2=QGroupBox('select')
-        start_button=QPushButton('start')
-        quit_button=QPushButton('Quit')
-        start_button.clicked.connect(self.showGraph)
-        quit_button.clicked.connect(QCoreApplication.instance().quit)
-        layout2=QHBoxLayout()
-        layout2.addWidget(start_button)
-        layout2.addWidget(quit_button)
-
-        layout=QVBoxLayout()
-        layout.addWidget(gBox1)
-        layout.addLayout(layout2)
-        self.setLayout(layout)
-
-        self.show()
-
-    def showGraph(self):
-        ax = plt.subplot()
-        plt.subplot()
-        ax.set_xlim([0, 7])
-        ax.set_ylim([0, 9])
-        # ax.plot([0,1], [0,0], color='red', linewidth=2) add path
-        # plt.scatter(0,0, c='red', s=500) add dot
-        ax.set_yticks([1, 2, 3, 4, 5], minor=True)
-        ax.set_yticks([1, 2, 3, 4, 5], minor=True)
-        ax.yaxis.grid(True, which='major')
-        ax.xaxis.grid(True, which='major')
-
-        plt.show()'''
+        self.sr=ShowResult()

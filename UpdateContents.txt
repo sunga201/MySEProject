@@ -46,7 +46,15 @@
          - generateRandomSpot() : Generate random hazard spot and color blob spot on unused point.
          - changePath() : overwrite current saved path with new path and draw new path on map.
          
--Updata 'Save Data' class
+-Update 'Save Data' class
     - Change method name
          - mapDataSave -> saveInputData
          
+
+11/20
+- Create 'ControlRobot' class in 'robot_and_control.py'
+    - Create method
+        - getPath() -> return current path infomation.
+        - createPath(start) -> create path starting from point 'start' with a* algorithm.
+        - g(oldSpot, newSpot), h(spot, obj), f(spot), setParentAndOpenList(x, y, mod), cal(start, end), isHazard(x, y), aStar(start, end)
+	-> Used in a* algorithm.

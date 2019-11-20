@@ -39,15 +39,18 @@ class ControlRobot:
     def __init__(self):
         self.path=[]
         self.foundHazardSpot=[]
+        self.sz=map_data.MapData.getMapSize()
 
-    def createPath(self, start):
+    def getPath(self):
+        return self.path
+
+    def createPath(self, start): # 목표지점에 도달했을 때 해당 지점을 배제하고 경로를 만들어야 한다.
         self.avoidSpot=map_data.MapData.getHazardSpot()+self.foundHazardSpot #these spots are excluded when system makes path.
         objectSpot=map_data.MapData.getObjectSpot()
         objNum=len(objectSpot)
         checkList=[0]*objNum
         chk=objNum
 
-        print(self.avoidSpot, objectSpot)
         self.path.append(start)
         distanceList=[]
         while chk!=0:
@@ -63,6 +66,7 @@ class ControlRobot:
             checkList[minIdx]=1
             nextSpot = objectSpot[minIdx]  # 현재 경로의 목표 지점
             self.aStar(prevSpot, nextSpot)
+            
             '''vertex=[(nextSpot[0], prevSpot[1])] #출발지 prevSpot과 목적지 nextSpot을 지나는 꼭짓점. nextSpot의 x값과 prevSpot의 y값으로 이루어진다.
             print('prevSpot : ', prevSpot, 'nextSpot : ', nextSpot, 'vertex : ', vertex)
             self.addVertex(prevSpot, vertex[0], nextSpot)'''
@@ -72,8 +76,6 @@ class ControlRobot:
             self.path.append(nextSpot)'''
 
             chk-=1
-
-        print("result : ", self.path)
 
     '''def addVertex(self, start, vertex, end):
         StoV = self.getHazardOnPath(start, vertex)
@@ -105,27 +107,38 @@ class ControlRobot:
         return self.arrayG[spot[0]][spot[1]]+self.arrayH[spot[0]][spot[1]]
 
 
-    def cal(self, sz, start, end):
+    def setParentAndOpenList(self, x, y, mod):
+        row=x+mod[0]
+        col=y+mod[1]
+        if (row, col) in self.openList:
+            if self.arrayG[x][y] + 1 < self.arrayG[row][col]:
+                self.parent[row][col] = (x, y)
+
+        else:
+            self.openList.append((row, col))
+            self.parent[row][col] = (x, y)
+
+    def cal(self, start, end):
         if self.completed==True: return
         if start==end:
             self.completed=True
             return
-        print("current point : ", start)
-        if start==end: return
-        print("sz : ", sz[0], " ", sz[1])
-        if start[0] + 1 <= sz[0] and (start[0]+1, start[1]) not in self.closeList and not self.isHazard(start[0]+1, start[1]):
-            self.openList.append((start[0]+1, start[1]))
-        if start[0] - 1 >= 0 and (start[0]-1, start[1]) not in self.closeList and not self.isHazard(start[0] - 1, start[1]):
-            self.openList.append((start[0] - 1, start[1]))
-        if start[1] + 1 <= sz[1] and (start[0], start[1]+1) not in self.closeList and not self.isHazard(start[0], start[1] + 1):
-            self.openList.append((start[0], start[1] + 1))
+
+        if start[0] + 1 <= self.sz[0] and (start[0] + 1, start[1]) not in self.closeList and not self.isHazard(start[0] + 1, start[1]):
+            self.setParentAndOpenList(start[0], start[1], (1, 0))
+
+        if start[0] - 1 >= 0 and (start[0] - 1, start[1]) not in self.closeList and not self.isHazard(start[0] - 1, start[1]):
+            self.setParentAndOpenList(start[0], start[1], (-1, 0))
+
+        if start[1] + 1 <= self.sz[1] and (start[0], start[1] + 1) not in self.closeList and not self.isHazard(start[0], start[1] + 1):
+            self.setParentAndOpenList(start[0], start[1], (0, 1))
+
         if start[1] - 1 >= 0 and (start[0], start[1] - 1) not in self.closeList and not self.isHazard(start[0], start[1] - 1):
-            self.openList.append((start[0], start[1] - 1))
+            self.setParentAndOpenList(start[0], start[1], (0, -1))
 
         que=PriorityQueue()
         min=99999999
         for point in self.openList:
-            print("test print. start : ", start, 'point : ', point)
             self.g(start, point)
             self.h(point, end)
             que.put((self.f(point), point))
@@ -133,9 +146,7 @@ class ControlRobot:
         nextPoint=que.get()[1]
         self.openList.remove(nextPoint)
         self.closeList.append(nextPoint)
-        self.cal(sz, nextPoint, end)
-
-
+        self.cal(nextPoint, end)
 
     def isHazard(self, x, y):
         hList=map_data.MapData.getHazardSpot()
@@ -143,18 +154,24 @@ class ControlRobot:
             return True
         return False
 
-    def aStar(self, start, end):
+    def aStar(self, start, end): #a* 알고리즘
         self.completed=False
-        sz=map_data.MapData.getMapSize()
 
-        self.arrayF = np.zeros((sz[0]+1, sz[1]+1))
-        self.arrayG = np.zeros((sz[0]+1, sz[1]+1))
-        self.arrayH = np.zeros((sz[0]+1, sz[1]+1))
-
+        self.arrayF = np.zeros((self.sz[0]+1, self.sz[1]+1))
+        self.arrayG = np.zeros((self.sz[0]+1, self.sz[1]+1))
+        self.arrayH = np.zeros((self.sz[0]+1, self.sz[1]+1))
+        self.parent=[[-1]*(self.sz[1]+1) for i in range(self.sz[0]+1)]
         self.openList=[]
-        self.closeList=[]
-        print("start : ",start, "end : ", end)
-        self.cal(sz, start, end)
+        self.closeList=[start]
+        self.cal(start, end)
+
+        tmp=end
+        pathList=[]
+        while tmp!=start:
+            pathList.append(tmp)
+            tmp=self.parent[tmp[0]][tmp[1]]
+        pathList.reverse()
+        self.path+=pathList
 
     def getHazardOnPath(self, start, end): #start와 end점은 x값이 같거나 y값이 같다.
         #print('start : ', start, ' end : ', end)
@@ -184,13 +201,3 @@ class ControlRobot:
                 if (i, start[1]) in self.avoidSpot:
                     result.append((i, start[1]))
             return result
-
-
-
-
-map_data.MapData()
-test=ControlRobot()
-test.createPath((1, 2))
-
-
-        

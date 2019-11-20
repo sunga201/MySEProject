@@ -66,36 +66,7 @@ class ControlRobot:
             checkList[minIdx]=1
             nextSpot = objectSpot[minIdx]  # 현재 경로의 목표 지점
             self.aStar(prevSpot, nextSpot)
-            
-            '''vertex=[(nextSpot[0], prevSpot[1])] #출발지 prevSpot과 목적지 nextSpot을 지나는 꼭짓점. nextSpot의 x값과 prevSpot의 y값으로 이루어진다.
-            print('prevSpot : ', prevSpot, 'nextSpot : ', nextSpot, 'vertex : ', vertex)
-            self.addVertex(prevSpot, vertex[0], nextSpot)'''
-
-            '''for v in vertex:
-                if v!=nextSpot and v!=prevSpot: self.path.append(v) #vertex가 현재 시작 지점, 도착 지점과 다른 점일 경우 경로에 추가
-            self.path.append(nextSpot)'''
-
             chk-=1
-
-    '''def addVertex(self, start, vertex, end):
-        StoV = self.getHazardOnPath(start, vertex)
-
-        if len(StoV)>0:
-            for idx in range(len(self.path)):
-                if self.path[idx] == start:
-                    break;
-
-            for hazard in StoV:
-
-
-        VtoE = self.getHazardOnPath(vertex, end)
-
-        if len(VtoE)>0:
-            for idx in range(len(self.path)):
-                if self.path[idx] == vertex:
-                    break;
-
-            for hazard in VtoE:'''
 
     def g(self, oldSpot, newSpot):
         self.arrayG[newSpot[0]][newSpot[1]]=self.arrayG[oldSpot[0]][oldSpot[1]]+1
@@ -105,7 +76,6 @@ class ControlRobot:
 
     def f(self, spot):
         return self.arrayG[spot[0]][spot[1]]+self.arrayH[spot[0]][spot[1]]
-
 
     def setParentAndOpenList(self, x, y, mod):
         row=x+mod[0]
@@ -172,32 +142,3 @@ class ControlRobot:
             tmp=self.parent[tmp[0]][tmp[1]]
         pathList.reverse()
         self.path+=pathList
-
-    def getHazardOnPath(self, start, end): #start와 end점은 x값이 같거나 y값이 같다.
-        #print('start : ', start, ' end : ', end)
-        result=[]
-        if start[0]==end[0]:
-            if start[1]<end[1] :
-                startY=start[1]
-                endY=end[1]
-            else:
-                startY=end[1]
-                endY=start[1]
-
-            for i in range(startY, endY):
-                if (start[0], i) in self.avoidSpot:
-                    result.append((start[0], i))
-            return result
-
-        else:
-            if start[0] < end[0] :
-                startX = start[0]
-                endX = end[0]
-            else:
-                startX = end[0]
-                endX= start[0]
-
-            for i in range(startX, endX):
-                if (i, start[1]) in self.avoidSpot:
-                    result.append((i, start[1]))
-            return result

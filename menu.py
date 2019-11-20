@@ -1,4 +1,5 @@
-#import control_robot
+import robot_and_control
+import map_data
 import sys
 import random
 from PyQt5.QtWidgets import *
@@ -19,44 +20,6 @@ class MessageController: #static class
     def showMessage(object, message, toggle): #static method, show message to operator.
         msg = QMessageBox.question(object, 'error', message, QMessageBox.Ok)
         if toggle: object.close()
-
-class MapData: #static class
-    def __init__(self, mapSize=(10, 10), startSpot=(1, 2), objectSpot=[(4, 2), (1, 5)], hazardSpot=[(1, 0), (3, 2), (4, 1)]): #revise (initial data remove)
-        MapData.mapSize=mapSize
-        print(MapData.mapSize)
-        MapData.startSpot=startSpot
-        MapData.objectSpot=objectSpot
-        MapData.hazardSpot=hazardSpot
-        MapData.hazardSpotH=[]
-        MapData.colorBlobH=[]
-
-    def setHiddenData(hazard, cb):
-        MapData.hazardSpotH.append(hazard)
-        MapData.colorBlobH.append(cb)
-
-    def getHazardH():
-        return MapData.hazardSpotH
-
-    def getColorblobH():
-        return MapData.colorBlobH
-
-    def getMapSize():
-        return MapData.mapSize
-
-    def getStartSpot():
-        return MapData.startSpot
-
-    def getObjectSpot():
-        return MapData.objectSpot
-
-    def getHazardSpot():
-        return MapData.hazardSpot
-
-    def removeHiddenSpot(point):
-        for h in MapData.hazardSpotH:
-            if point==h:
-                MapData.hazardSpotH.remove(h)
-
 
 class SaveData(QWidget):
     def __init__(self):
@@ -126,16 +89,16 @@ class SaveData(QWidget):
         hazardSpot=[]
         for i in range(0, len(hazard), 2):
             hazardSpot.append(tuple(hazard[i:i+2]))
-        MapData(mapSize, start, objectSpot, hazardSpot)
+        map_data.MapData(mapSize, start, objectSpot, hazardSpot)
         MessageController.showMessage(self, 'Save Completed.', CLOSE)
 
 class ShowMapData(QWidget):
     def __init__(self):
         super().__init__()
-        mapSize=MapData.getMapSize()
-        startSpot=MapData.getStartSpot()
-        objectSpot=MapData.getObjectSpot()
-        hazardSpot=MapData.getHazardSpot()
+        mapSize=map_data.MapData.getMapSize()
+        startSpot=map_data.MapData.getStartSpot()
+        objectSpot=map_data.MapData.getObjectSpot()
+        hazardSpot=map_data.MapData.getHazardSpot()
         print(mapSize, startSpot, objectSpot, hazardSpot)
 
         self.setWindowTitle("Show map data")
@@ -149,21 +112,21 @@ class ShowResult(QWidget):
     def __init__(self):
         super().__init__()
         np.random.seed(int(time.time()))
-        MapData()  # temp
-        self.mapSize=MapData.getMapSize()
-        self.prevPosition=MapData.getStartSpot()
-        self.hazardSpot=MapData.getHazardSpot()
-        self.objectSpot=MapData.getObjectSpot()
+        map_data.MapData()  # temp
+        self.mapSize=map_data.MapData.getMapSize()
+        self.prevPosition=map_data.MapData.getStartSpot()
+        self.hazardSpot=map_data.MapData.getHazardSpot()
+        self.objectSpot=map_data.MapData.getObjectSpot()
         self.drawedLines = []
         self.generateRandomSpot()
         self.objCnt=len(self.objectSpot)
-        #self.add_on=control_robot.Add_on();
+        self.ControlRobot=robot_and_control.ControlRobot();
         self.showMap()
 
     def showMap(self):
         #self.path=self.add_on.get_path()
         self.path=[(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
-        arrowDirection=[(0, 0.4), (0.4, 0), (0, -0.4), (-0.4, 0)]
+        self.arrowDirection=[(0, 0.4), (0.4, 0), (0, -0.4), (-0.4, 0)]
         self.prevDirection=-1
         self.arrowFileName=['up.png', 'right.png', 'down.png', 'left.png']
         checkDirection=self.path[1][0]-self.path[0][0], self.path[1][1]-self.path[0][1]
@@ -183,17 +146,20 @@ class ShowResult(QWidget):
         self.canvas=FigureCanvas(self.fig)
         self.mapScreen = self.fig.add_subplot(1, 1, 1)
         self.mapScreen.grid()
-        self.robotImage=self.imageScatter(self.prevPosition[0], self.prevPosition[1], 'robot.png', zoom=0.2, ax=self.mapScreen)
-        self.arrowImage=self.imageScatter(self.prevPosition[0]+arrowDirection[self.prevDirection][0], self.prevPosition[1]+arrowDirection[self.prevDirection][1],
-                                       self.arrowFileName[self.prevDirection], zoom=0.4, ax=self.mapScreen)
+        self.robotImage=self.imageScatter(self.prevPosition[0], self.prevPosition[1], 'robot.png', zoom=0.3, ax=self.mapScreen)
+        self.arrowImage=self.imageScatter(self.prevPosition[0]+self.arrowDirection[self.prevDirection][0], self.prevPosition[1]+self.arrowDirection[self.prevDirection][1],
+                                       self.arrowFileName[self.prevDirection], zoom=0.6, ax=self.mapScreen)
+
+        for hazardSpot in self.hazardSpot:
+            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+
+        for objSpot in self.objectSpot:
+            self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)
 
         plt.xlim(0, self.mapSize[0]+1)
         plt.xticks(np.arange(0, self.mapSize[0]+1, step=1), color='w')
         plt.ylim(0, self.mapSize[1]+1)
         plt.yticks(np.arange(0, self.mapSize[1]+1, step=1), color='w')
-
-        for h in self.hazardSpot:
-            plt.scatter(h[0], h[1], c='b')
 
         for o in self.objectSpot:
             plt.scatter(o[0], o[1], c='y')
@@ -227,8 +193,8 @@ class ShowResult(QWidget):
         except TypeError:
             return
         im = OffsetImage(image, zoom=zoom)
-        ab = AnnotationBbox(im, (x, y), xycoords='data', frameon=False)
-        return ax.add_artist(ab)
+        artist = AnnotationBbox(im, (x, y), frameon=False)
+        return ax.add_artist(artist)
 
     def changePath(self):
         self.path = [(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
@@ -237,19 +203,20 @@ class ShowResult(QWidget):
     def showRobotMovement(self):
         while self.objCnt!=0:
             time.sleep(1)
-            self.robotImage.remove()
-            self.arrowImage.remove()
-            self.robotImage=self.imageScatter(self.prevPosition[0]+1, self.prevPosition[1], 'robot.png', zoom=0.2, ax=self.mapScreen)
-            self.arrowImage=self.imageScatter(self.prevPosition[0] + 1.4, self.prevPosition[1], self.arrowFileName[self.prevDirection],
-                           zoom=0.4, ax=self.mapScreen)
+            if self.robotImage:
+                self.robotImage.remove()
+                self.arrowImage.remove()
+            self.robotImage=self.imageScatter(self.prevPosition[0]+1, self.prevPosition[1], 'robot.png', zoom=0.3, ax=self.mapScreen)
+            self.arrowImage=self.imageScatter(self.prevPosition[0] + 1+self.arrowDirection[self.prevDirection][0], self.prevPosition[1], self.arrowFileName[self.prevDirection],
+                           zoom=0.6, ax=self.mapScreen)
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
             self.objCnt=0
 
     def generateRandomSpot(self):
-        visibleHazardSpot=MapData.getHazardSpot()
-        objectSpot=MapData.getObjectSpot()
-        startSpot=MapData.getStartSpot()
+        visibleHazardSpot=map_data.MapData.getHazardSpot()
+        objectSpot=map_data.MapData.getObjectSpot()
+        startSpot=map_data.MapData.getStartSpot()
         hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
         cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
         mapWidth = self.mapSize[0]
@@ -330,7 +297,7 @@ class ShowResult(QWidget):
 
         # check if there is an overlapped point between hidden hazard spot and hidden cb spot.
         assert len([item for item in hiddenHazardSpot if item in hiddenCbSpot])==0
-        MapData.setHiddenData(hiddenHazardSpot, hiddenCbSpot)
+        map_data.MapData.setHiddenData(hiddenHazardSpot, hiddenCbSpot)
 
     def drawPath(self):
         if len(self.drawedLines)!=0:
@@ -412,7 +379,7 @@ class ShowMenu(QWidget):
 
     def showMapData(self):
         try:
-            testAtt=MapData.getMapSize()
+            testAtt=map_data.MapData.getMapSize()
         except AttributeError:
             MessageController.showMessage(self, 'map data doesn\'t exist.', NOT_CLOSE)
             return

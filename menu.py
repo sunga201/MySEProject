@@ -164,7 +164,9 @@ class ShowResult(QWidget):
         for o in self.objectSpot:
             plt.scatter(o[0], o[1], c='y')
 
-        self.path = [(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (3, 5), (3, 4), (1, 4), (1, 5)]
+        self.ControlRobot.createPath(self.prevPosition)
+        self.path =self.ControlRobot.getPath()
+        print('main path : ', self.path)
         subLayout1=QVBoxLayout()
         subLayout1.addWidget(self.canvas)
 
@@ -197,7 +199,7 @@ class ShowResult(QWidget):
         return ax.add_artist(artist)
 
     def changePath(self):
-        self.path = [(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
+        self.path = self.ControlRobot.createPath(self.prevPosition)
         self.drawPath()
 
     def showRobotMovement(self):

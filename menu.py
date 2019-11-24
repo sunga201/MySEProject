@@ -2,6 +2,7 @@ import robot_and_control
 import map_data
 import sys
 import random
+import copy
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QCoreApplication
@@ -17,8 +18,8 @@ CLOSE=1
 NOT_CLOSE=0
 
 class MessageController: #static class
-    def showMessage(object, message, toggle): #static method, show message to operator.
-        msg = QMessageBox.question(object, 'error', message, QMessageBox.Ok)
+    def showMessage(object, head, message, toggle): #static method, show message to operator.
+        msg = QMessageBox.question(object, head, message, QMessageBox.Ok)
         if toggle: object.close()
 
 class SaveData(QWidget):
@@ -65,7 +66,7 @@ class SaveData(QWidget):
         hazard=self.hazardLine.text()
 
         if mapSize=='' or start=='' or spot=='' or hazard=='':
-            MessageController.showMessage(self, 'Please check map data again.', NOT_CLOSE)
+            MessageController.showMessage(self, 'error', 'Please check map data again.', NOT_CLOSE)
             return
         try:
             mapSize=mapSize.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
@@ -73,8 +74,7 @@ class SaveData(QWidget):
             spot = spot.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
             hazard = hazard.replace('(', ' ').replace(')', ' ').replace(',', ' ').split()
         except:
-            print("check!!!")
-            MessageController.showMessage(self, 'Please check map data again.', NOT_CLOSE)
+            MessageController.showMessage(self, 'error', 'Please check map data again.', NOT_CLOSE)
             return
 
         mapSize=tuple(map(int, mapSize))
@@ -83,14 +83,14 @@ class SaveData(QWidget):
         hazard=list(map(int, hazard))
         objectSpot=[]
         for i in range(0, len(spot), 2):
-            print(i)
+
             objectSpot.append(tuple(spot[i:i+2]))
 
         hazardSpot=[]
         for i in range(0, len(hazard), 2):
             hazardSpot.append(tuple(hazard[i:i+2]))
         map_data.MapData(mapSize, start, objectSpot, hazardSpot)
-        MessageController.showMessage(self, 'Save Completed.', CLOSE)
+        MessageController.showMessage(self, 'notice', 'Save Completed.', CLOSE)
 
 class ShowMapData(QWidget):
     def __init__(self):
@@ -111,34 +111,42 @@ class ShowMapData(QWidget):
 class ShowResult(QWidget):
     def __init__(self):
         super().__init__()
+        self.init()
         np.random.seed(int(time.time()))
-        map_data.MapData()  # temp
-        self.mapSize=map_data.MapData.getMapSize()
-        self.prevPosition=map_data.MapData.getStartSpot()
-        self.hazardSpot=map_data.MapData.getHazardSpot()
-        self.objectSpot=map_data.MapData.getObjectSpot()
-        self.drawedLines = []
         self.generateRandomSpot()
-        self.objCnt=len(self.objectSpot)
-        self.ControlRobot=robot_and_control.ControlRobot();
         self.showMap()
 
+    def init(self): # 메뉴로 돌아갔다가 다시 show result를 누를 때 정보를 초기화하기 위해 사용
+        self.mapSize = map_data.MapData.getMapSize()
+        self.curPosition = copy.deepcopy(map_data.MapData.getStartSpot())
+        self.hazardSpot = map_data.MapData.getHazardSpot()
+        self.originalObjectSpot = copy.deepcopy(map_data.MapData.getObjectSpot())
+        self.objectSpot = map_data.MapData.getObjectSpot()
+        self.objCnt=len(self.objectSpot)
+        self.drawedLines = []
+
     def showMap(self):
-        #self.path=self.add_on.get_path()
-        self.path=[(1, 2), (2, 2), (2, 3), (4, 3), (4, 2), (4, 5), (1, 5)]
-        self.arrowDirection=[(0, 0.4), (0.4, 0), (0, -0.4), (-0.4, 0)]
-        self.prevDirection=-1
+        self.arrowDirection=[(0, 0.7), (0.4, 0), (0, -0.7), (-0.4, 0)]
+        self.curDirection=-1
         self.arrowFileName=['up.png', 'right.png', 'down.png', 'left.png']
-        checkDirection=self.path[1][0]-self.path[0][0], self.path[1][1]-self.path[0][1]
-        if checkDirection[0]==0:
-            if checkDirection[1]>0:
-                self.prevDirection=0
-            else: self.prevDirection=2
+
+        self.ctrlPath = robot_and_control.ControlPath()  # 경로를 컨트롤하는 클래스 ControlPath의 인스턴스 생성
+        self.ctrlPath.createPath(self.curPosition)  # 경로 생성
+        self.path = self.ctrlPath.getPath()  # 생성한 경로 불러오기
+
+        initialDirection=self.path[1][0]-self.path[0][0], self.path[1][1]-self.path[0][1] # 0 : up 1 : right 2 : down 3 : left
+        if initialDirection[0]==0:
+            if initialDirection[1]>0:
+                self.curDirection=0
+            else: self.curDirection=2
         else:
-            if checkDirection[0]>0:
-                self.prevDirection=1
-            else: self.prevDirection=3
-        # 0 : up 1 : right 2 : down 3 : left
+            if initialDirection[0]>0:
+                self.curDirection=1
+            else: self.curDirection=3
+
+        assert(self.curDirection!=-1) #로봇의 방향이 제대로 배정되었는지 확인
+
+        self.ctrlRobot = robot_and_control.ControlRobot(self.curDirection) #로봇을 컨트롤하는 클래스 ControlRobot의 인스턴스 생성
         self.setWindowTitle("Result")
         self.setWindowIcon(QIcon('titleIcon.png'))
         self.resize(1900, 1000)  # width, height
@@ -146,27 +154,23 @@ class ShowResult(QWidget):
         self.canvas=FigureCanvas(self.fig)
         self.mapScreen = self.fig.add_subplot(1, 1, 1)
         self.mapScreen.grid()
-        self.robotImage=self.imageScatter(self.prevPosition[0], self.prevPosition[1], 'robot.png', zoom=0.3, ax=self.mapScreen)
-        self.arrowImage=self.imageScatter(self.prevPosition[0]+self.arrowDirection[self.prevDirection][0], self.prevPosition[1]+self.arrowDirection[self.prevDirection][1],
-                                       self.arrowFileName[self.prevDirection], zoom=0.6, ax=self.mapScreen)
+        self.robotImage=None
+        self.arrowImage=None
+        self.drawRobot(self.curPosition)
+        self.objectSpotInstance=[] # Object spot을 그릴 때 나오는 리턴값을 저장한다. 방문한 objec spot을 맵 상에서 지울 때 사용
 
         for hazardSpot in self.hazardSpot:
             self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
 
+
         for objSpot in self.objectSpot:
-            self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)
+            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)))
 
-        plt.xlim(0, self.mapSize[0]+1)
-        plt.xticks(np.arange(0, self.mapSize[0]+1, step=1), color='w')
-        plt.ylim(0, self.mapSize[1]+1)
-        plt.yticks(np.arange(0, self.mapSize[1]+1, step=1), color='w')
+        plt.xlim(0, self.mapSize[0])
+        plt.xticks(np.arange(0, self.mapSize[0], step=1), color='w')
+        plt.ylim(0, self.mapSize[1])
+        plt.yticks(np.arange(0, self.mapSize[1], step=1), color='w')
 
-        for o in self.objectSpot:
-            plt.scatter(o[0], o[1], c='y')
-
-        self.ControlRobot.createPath(self.prevPosition)
-        self.path =self.ControlRobot.getPath()
-        print('main path : ', self.path)
         subLayout1=QVBoxLayout()
         subLayout1.addWidget(self.canvas)
 
@@ -199,49 +203,97 @@ class ShowResult(QWidget):
         return ax.add_artist(artist)
 
     def changePath(self):
-        self.path = self.ControlRobot.createPath(self.prevPosition)
+        self.ctrlPath.createPath(self.curPosition)
+        self.path=self.ctrlPath.getPath()
         self.drawPath()
 
     def showRobotMovement(self):
         while self.objCnt!=0:
-            time.sleep(1)
-            if self.robotImage:
-                self.robotImage.remove()
-                self.arrowImage.remove()
-            self.robotImage=self.imageScatter(self.prevPosition[0]+1, self.prevPosition[1], 'robot.png', zoom=0.3, ax=self.mapScreen)
-            self.arrowImage=self.imageScatter(self.prevPosition[0] + 1+self.arrowDirection[self.prevDirection][0], self.prevPosition[1], self.arrowFileName[self.prevDirection],
-                           zoom=0.6, ax=self.mapScreen)
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-            self.objCnt=0
+            '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
+            hiddenCbList, hiddenHSpot=self.ctrlRobot.getSensorInfo()
+
+            if len(hiddenCbList)!=0: #현재 위치 근처에 hidden cb가 존재한다.
+                for pos in hiddenCbList: #리스트에는 color blob의 좌표가 들어있다.
+                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5, ax=self.mapScreen)
+
+            '''로봇이 보고있는 방향 바로 앞에 숨겨진 hazard spot을 맵에 표시한다.'''
+            if self.ctrlRobot.checkDirection() and hiddenHSpot[0]!=-1:
+                MessageController.showMessage(self, 'notice', 'Robot found Hazard spot!', NOT_CLOSE)
+                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+                self.changePath()
+                map_data.MapData.removeHiddenSpot(hiddenHSpot)
+                continue
+
+            test=self.commandMovementAndChangePosInfo()
+            self.drawRobot(test)
+            if tuple(self.curPosition) in self.objectSpot:
+
+                for spot, objectImageInstance in self.objectSpotInstance:
+                    if spot==tuple(self.curPosition):
+                        objectImageInstance.remove()
+                self.objectSpot.remove(tuple(self.curPosition)) # 방문한 object spot을 MapData의 objectSpot 리스트에서 뺀다.
+                self.objCnt-=1
+
+        MessageController.showMessage(self, 'notice', 'robot found all object spot!', NOT_CLOSE)
+        map_data.MapData.getBackObjectSpot(self.originalObjectSpot)  # objectSpot 리스트를 처음 입력했던 상태로 돌려놓는다.
+        robot_and_control.PathInfo.delInstance()
+        robot_and_control.SIM.delInstance()
+
+    def commandMovementAndChangePosInfo(self):
+        changedPosition, changedDirection = self.ctrlRobot.commandMovement()
+        self.curPosition = changedPosition
+        self.curDirection = changedDirection
+        return changedPosition, changedDirection
+
+    def drawRobot(self, test):
+        moveDirection = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        if test==self.curPosition: #처음 시작할 때
+            x = test[0] - self.curPosition[0]
+            y = test[1] - self.curPosition[1]
+
+        else: #이외의 경우
+            x=test[0][0]-self.curPosition[0]
+            y=test[0][1]-self.curPosition[1]
+
+        if self.robotImage:
+            self.robotImage.remove()
+            self.arrowImage.remove()
+
+        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3,
+                                            ax=self.mapScreen)
+        self.arrowImage = self.imageScatter(self.curPosition[0] + x + self.arrowDirection[self.curDirection][0],
+                                            self.curPosition[1] + y + self.arrowDirection[self.curDirection][1], self.arrowFileName[self.curDirection],
+                                            zoom=0.6, ax=self.mapScreen)
+        time.sleep(0.5)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def generateRandomSpot(self):
-        visibleHazardSpot=map_data.MapData.getHazardSpot()
-        objectSpot=map_data.MapData.getObjectSpot()
-        startSpot=map_data.MapData.getStartSpot()
-        hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
-        cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100))
+        visibleHazardSpot=map_data.MapData.getHazardSpot() # 맵 상에 보이는 위험 지역 좌표
+        objectSpot=map_data.MapData.getObjectSpot() # 목표 지역 좌표
+        startSpot=map_data.MapData.getStartSpot() #시작 지역 좌표
+        hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100)) #보이지 않는 위험 지역의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
+        cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100)) #color blob spot의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
         mapWidth = self.mapSize[0]
         mapHeight = self.mapSize[1]
         tmpHazard=[]
         tmpCb=[]
 
-        usedSpot = visibleHazardSpot+objectSpot
+        usedSpot = visibleHazardSpot+objectSpot # 이 지역은 hidden hazard spot이나 color blob spot을 만들 수 없다.
         usedSpot.append(startSpot)
 
         usableSpot=[]
         for i in range(mapWidth+1):
             for j in range(mapHeight+1):
-                usableSpot.append((i, j))
+                usableSpot.append((i, j)) # 맵 상의 모든 좌표를 usableSpot 리스트에 넣는다.
 
         for point in usedSpot:
             usableSpot.remove(point)
-
-        hiddenCbSpot=random.sample(usableSpot, cbNum) #Pick random color blob spot.
+        hiddenCbSpot=random.sample(usableSpot, cbNum) # usableSpot 리스트 내부에서 위에서 정한 갯수민큼 color blob spot을 뽑고, 그 지역을 usableSpot 리스트에서 삭제한다.
         for cbSpot in hiddenCbSpot:
             usableSpot.remove(cbSpot)
 
-        hiddenHazardSpot=random.sample(usableSpot, hazardNum)
+        hiddenHazardSpot=random.sample(usableSpot, hazardNum) # hidden hazard spot도 뽑는다.
         for hazardSpot in hiddenHazardSpot:
             usableSpot.remove(hazardSpot)
 
@@ -250,7 +302,7 @@ class ShowResult(QWidget):
         for obj in objectSpot:
             x=obj[0]
             y=obj[1]
-            hsNum=4 #decide maximum number of hazard spot surrounding each object spot.
+            hsNum=4 # 위험 지역이 목표 지역을 감쌀 수 있는 최대 갯수를 지정한다. 맵의 모서리에서는 3개, 꼭짓점에서는 2개
             checkSpot=[(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
             tobeRemovedSpot=(x, y-1)
             if (x==0 and y==0) or (x==0 and y==mapHeight) or (x==mapWidth and y==0) or (x==mapWidth and y==mapHeight):
@@ -266,7 +318,7 @@ class ShowResult(QWidget):
                 else:
                     checkSpot = [(x - 1, y), (x, y - 1)]
 
-                # pick random hazard spot that surrounds a object spot from hiddenHazardSpot list.
+                # 목표 지역을 둘러싸고 있는 위험 지점들 중 목표 지점에 도달하지 못하도록 배치되었을 때 지워질 후보 점을 뽑는다.
                 tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
                 hsNum=2
 
@@ -277,6 +329,7 @@ class ShowResult(QWidget):
                 else:
                     checkSpot=[(x-1, y), (x, y-1), (x, y+1)]
 
+                # 목표 지역을 둘러싸고 있는 위험 지점들 중 목표 지점에 도달하지 못하도록 배치되었을 때 지워질 후보 점을 뽑는다.
                 tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
                 hsNum=3
 
@@ -287,17 +340,14 @@ class ShowResult(QWidget):
                 else:
                     checkSpot = [(x, y - 1), (x - 1, y), (x + 1, y)]
 
+                # 목표 지역을 둘러싸고 있는 위험 지점들 중 목표 지점에 도달하지 못하도록 배치되었을 때 지워질 후보 점을 뽑는다.
                 tobeRemovedSpot = random.sample([item for item in checkSpot if item not in visibleHazardSpot], 1)[0]
                 hsNum=3
 
             if (len(totalHazardSpot)-len([item for item in totalHazardSpot if item not in checkSpot]))==hsNum:
-                print('catch!!, to be removed : ', tobeRemovedSpot)
                 hiddenHazardSpot.remove(tobeRemovedSpot)
-
-        print('final hidden hazard spot : ', hiddenHazardSpot)
-        print('findl cb spot : ', hiddenCbSpot)
-
-        # check if there is an overlapped point between hidden hazard spot and hidden cb spot.
+                
+        # 무작위로 생성한 color blob spot과 hidden hazard spot이 겹치지는 않는지 확인한다.
         assert len([item for item in hiddenHazardSpot if item in hiddenCbSpot])==0
         map_data.MapData.setHiddenData(hiddenHazardSpot, hiddenCbSpot)
 
@@ -335,6 +385,7 @@ class ShowResult(QWidget):
 class ShowMenu(QWidget):
     def __init__(self):
         super().__init__()
+        map_data.MapData()  # temp
         self.setWindowTitle("ADD-ON System")
         self.setWindowIcon(QIcon('titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
@@ -383,16 +434,16 @@ class ShowMenu(QWidget):
         try:
             testAtt=map_data.MapData.getMapSize()
         except AttributeError:
-            MessageController.showMessage(self, 'map data doesn\'t exist.', NOT_CLOSE)
+            MessageController.showMessage(self, 'error', 'map data doesn\'t exist.', NOT_CLOSE)
             return
 
         self.smd=ShowMapData()
 
     def showResult(self):
-        '''try:
-            testAtt=MapData.getMapSize()
+        try:
+            testAtt=map_data.MapData.getMapSize()
         except AttributeError:
-            MessageController.showMessage(self, 'map data doesn\'t exist.', NOT_CLOSE)
-            return'''
+            MessageController.showMessage(self, 'error', 'map data doesn\'t exist.', NOT_CLOSE)
+            return
 
         self.sr=ShowResult()

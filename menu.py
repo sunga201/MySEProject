@@ -158,19 +158,21 @@ class ShowResult(QWidget):
         self.arrowImage=None
         self.drawRobot(self.curPosition)
         self.objectSpotInstance=[] # Object spot을 그릴 때 나오는 리턴값을 저장한다. 방문한 objec spot을 맵 상에서 지울 때 사용
-
         for hazardSpot in self.hazardSpot:
-            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
 
 
         for objSpot in self.objectSpot:
-            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)))
+            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)))
 
-        plt.xlim(0, self.mapSize[0])
-        plt.xticks(np.arange(0, self.mapSize[0], step=1), color='w')
-        plt.ylim(0, self.mapSize[1])
-        plt.yticks(np.arange(0, self.mapSize[1], step=1), color='w')
-
+        plt.xlim(-1, self.mapSize[0]+1)
+        plt.xticks(np.arange(-1, self.mapSize[0]+1, step=1), color='w')
+        plt.ylim(-1, self.mapSize[1]+1)
+        plt.yticks(np.arange(-1, self.mapSize[1]+1, step=1), color='w')
+        
+        #맵의 외곽선을 그린다.
+        self.drawBorder()
+        
         subLayout1=QVBoxLayout()
         subLayout1.addWidget(self.canvas)
 
@@ -190,6 +192,11 @@ class ShowResult(QWidget):
         self.show()
         self.drawPath()
 
+    def drawBorder(self): #맵의 경계를 그린다.
+        plt.plot([self.mapSize[1]] * (self.mapSize[0] + 1), 'k', lineWidth=5)  # 위
+        plt.plot([0] * (self.mapSize[0] + 1), 'k', lineWidth=5)  # 아래
+        plt.plot([0] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', lineWidth=5)  # 왼쪽
+        plt.plot([self.mapSize[0]] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', lineWidth=5)  # 오른쪽
 
     def imageScatter(self, x, y, image, zoom=1, ax=None):
         if ax is None:
@@ -209,28 +216,30 @@ class ShowResult(QWidget):
 
     def showRobotMovement(self):
         while self.objCnt!=0:
-            '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
             hiddenCbList, hiddenHSpot=self.ctrlRobot.getSensorInfo()
 
+            '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
             if len(hiddenCbList)!=0: #현재 위치 근처에 hidden cb가 존재한다.
                 for pos in hiddenCbList: #리스트에는 color blob의 좌표가 들어있다.
-                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5, ax=self.mapScreen)
+                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
+                self.fig.canvas.draw()
+                self.fig.canvas.flush_events()
 
             '''로봇이 보고있는 방향 바로 앞에 숨겨진 hazard spot을 맵에 표시한다.'''
             if self.ctrlRobot.checkDirection() and hiddenHSpot[0]!=-1:
                 MessageController.showMessage(self, 'notice', 'Robot found Hazard spot!', NOT_CLOSE)
-                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
                 self.changePath()
                 map_data.MapData.removeHiddenSpot(hiddenHSpot)
                 continue
 
-            test=self.commandMovementAndChangePosInfo()
-            self.drawRobot(test)
+            self.commandMovementAndChangePosInfo()
             if tuple(self.curPosition) in self.objectSpot:
-
                 for spot, objectImageInstance in self.objectSpotInstance:
                     if spot==tuple(self.curPosition):
                         objectImageInstance.remove()
+                        self.fig.canvas.draw()
+                        self.fig.canvas.flush_events()
                 self.objectSpot.remove(tuple(self.curPosition)) # 방문한 object spot을 MapData의 objectSpot 리스트에서 뺀다.
                 self.objCnt-=1
 
@@ -239,11 +248,21 @@ class ShowResult(QWidget):
         robot_and_control.PathInfo.delInstance()
         robot_and_control.SIM.delInstance()
 
+    #commandMovementAndChangePosInfo() : 로봇의 움직임을 지시하고 움직임이 끝난 뒤 현재 로봇의 위치 정보, 방향 정보를 받아 curPosition, curDirection을 수정한다.
+    #                                    기존에 맵에 있던 로봇을 지우고 움직인 위치에 로봇을 다시 그린다.
+    
     def commandMovementAndChangePosInfo(self):
-        changedPosition, changedDirection = self.ctrlRobot.commandMovement()
+        beforePosition=(self.curPosition[0], self.curPosition[1])
+        changedPosition, changedDirection = self.ctrlRobot.commandMovement()  
         self.curPosition = changedPosition
         self.curDirection = changedDirection
-        return changedPosition, changedDirection
+        self.drawRobot(self.curPosition)
+        if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])!=0:
+            self.ctrlRobot.upPathNum()
+            
+        if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==2:
+            self.changePath()
+        
 
     def drawRobot(self, test):
         moveDirection = [(0, 1), (1, 0), (0, -1), (-1, 0)]
@@ -259,12 +278,12 @@ class ShowResult(QWidget):
             self.robotImage.remove()
             self.arrowImage.remove()
 
-        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3,
+        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3/max(self.mapSize[0]/10, 1),
                                             ax=self.mapScreen)
         self.arrowImage = self.imageScatter(self.curPosition[0] + x + self.arrowDirection[self.curDirection][0],
                                             self.curPosition[1] + y + self.arrowDirection[self.curDirection][1], self.arrowFileName[self.curDirection],
-                                            zoom=0.6, ax=self.mapScreen)
-        time.sleep(0.5)
+                                            zoom=0.6/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
+        time.sleep(0.7) #1초 간격으로 로봇의 움직임 표현
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -272,8 +291,8 @@ class ShowResult(QWidget):
         visibleHazardSpot=map_data.MapData.getHazardSpot() # 맵 상에 보이는 위험 지역 좌표
         objectSpot=map_data.MapData.getObjectSpot() # 목표 지역 좌표
         startSpot=map_data.MapData.getStartSpot() #시작 지역 좌표
-        hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100)) #보이지 않는 위험 지역의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
-        cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1]), 100)) #color blob spot의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
+        hazardNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1])/2, 100)) #보이지 않는 위험 지역의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
+        cbNum=np.random.randint(0, min((self.mapSize[0]+self.mapSize[1])/2, 100)) #color blob spot의 수를 0 ~ (맵의 가로 길이 + 세로 길이) (최대 100) 사이의 수로 정한다.
         mapWidth = self.mapSize[0]
         mapHeight = self.mapSize[1]
         tmpHazard=[]
@@ -287,6 +306,7 @@ class ShowResult(QWidget):
             for j in range(mapHeight+1):
                 usableSpot.append((i, j)) # 맵 상의 모든 좌표를 usableSpot 리스트에 넣는다.
 
+        print('used spot : ', usedSpot)
         for point in usedSpot:
             usableSpot.remove(point)
         hiddenCbSpot=random.sample(usableSpot, cbNum) # usableSpot 리스트 내부에서 위에서 정한 갯수민큼 color blob spot을 뽑고, 그 지역을 usableSpot 리스트에서 삭제한다.
@@ -379,8 +399,9 @@ class ShowResult(QWidget):
 
 
     def removePath(self):
-        for i in range(len(self.mapScreen.lines)):
+        for i in range(0, len(self.mapScreen.lines)):
             self.mapScreen.lines[0].remove()
+        self.drawBorder()
 
 class ShowMenu(QWidget):
     def __init__(self):

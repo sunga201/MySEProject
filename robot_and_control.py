@@ -24,10 +24,27 @@ class SIM:
     def delInstance():
         SIM.sim=None
 
+    def checkError(self, checkSpot):
+        mapSize=map_data.MapData.getMapSize()
+        hazardSpot=map_data.MapData.getHazardSpot() + map_data.MapData.getHazardH()  # 앞으로 두 칸 움직일 때 경로상에 hazard spot이 있는 경우를 배제하기 위해 사용.
+        if checkSpot in hazardSpot or checkSpot[0]<0 or checkSpot[0]>mapSize[0] or checkSpot[1]<0 or checkSpot[1]>mapSize[1]:
+            return True
+        return False
+    #로봇을 앞으로 한 칸 이동시킨다. 로봇이 움직이지 않거나, 앞으로 두 칸 움직일 가능성이 있다.
     def moveForward(self):
         inPlaceProp=0.8
         twoStepProp=0.9
-        if self.hazardSensor : inPlaceProp=1 #바로 앞에 위험 지역이 있을 경우에는 오작동 배제
+
+        dir=moveDirection[self.direction]
+        checkSpot=((self.position[0]+dir[0], self.position[1]+dir[1]), (self.position[0]+2*dir[0], self.position[1]+2*dir[1]))
+        print('cur position : ', self.position, ' one step : ', checkSpot[0], ' two step : ', checkSpot[1])
+        checkE=False
+        checkE=self.checkError(checkSpot[0])
+        checkE=self.checkError(checkSpot[1])
+
+        if checkE==True:
+            print('check!')
+            inPlaceProp=1 #바로 앞에 위험 지역이 있을 경우에는 오작동 배제
 
         bugProp=np.random.rand()
         if bugProp>inPlaceProp:
@@ -35,7 +52,7 @@ class SIM:
                 print('two step !!!')
                 self.position += 2*np.array(moveDirection[self.direction])
 
-            print('no move!!!')
+            else : print('no move!!!')
         else:
             self.position+=np.array(moveDirection[self.direction])
 
@@ -61,10 +78,12 @@ class SIM:
         return cbList
 
     def hazardSensor(self): #위험지역을 발견하고 이를 foundHazardSpot 배열에 추가한다.
+        self.isHazard=False # moveForward에 사용. 이 값이 True이면 오동작은 배제한다.
         hiddenHazard=map_data.MapData.getHazardH()
         checkSpot=(self.position[0]+moveDirection[self.direction][0], self.position[1]+moveDirection[self.direction][1])
         if checkSpot in hiddenHazard:
             self.foundHazardSpot.append(checkSpot)
+            self.isHazard=True
             return True
         return False
 
@@ -120,11 +139,11 @@ class ControlRobot:
         return cbList, hPoint
 
     def checkDirection(self): # 현재 로봇이 다음 가야할 곳을 향하고 있는지 확인한다.
-        '''경로와 방향이 맞지 않으면 방향을 돌린다.'''
+        #                       경로와 방향이 맞지 않으면 방향을 돌린다.
         _, curDirection=self.robot.positioningSensor()
         tmp=self.pathInfo.getPathInfo() # 방향을 확인하기 위해 경로 정보를 받아온다.
         if self.path!=tmp:
-            self.pathNum=0
+            self.pathNum=0 #경로가 바뀌었을 경우 pathNum 값을 초기화한다.
             self.path=tmp
 
         pointSum = (self.path[self.pathNum+1][0] - self.path[self.pathNum][0],
@@ -141,9 +160,10 @@ class ControlRobot:
 
         else:
             self.robot.moveForward()
-            self.pathNum+=1
-            nextPosition=self.robot.positioningSensor()
         return self.robot.positioningSensor()
+
+    def upPathNum(self):
+        self.pathNum += 1
 
 
 class ControlPath:
@@ -179,7 +199,7 @@ class ControlPath:
             nextSpot = objectSpot[minIdx]  # 현재 경로의 목표 지점
             self.aStar(prevSpot, nextSpot)
             chk-=1
-
+        print('end')
         self.pathInfo.setPath(self.path)
 
 

@@ -124,6 +124,7 @@ class ShowResult(QWidget):
         self.objectSpot = map_data.MapData.getObjectSpot()
         self.objCnt=len(self.objectSpot)
         self.drawedLines = []
+        self.enlarge = False  # 맵의 가로, 세로 길이가 모두 10을 넘으면 맵을 확대해서 보여준다.
 
     def showMap(self):
         self.arrowDirection=[(0, 0.7), (0.4, 0), (0, -0.7), (-0.4, 0)]
@@ -158,36 +159,87 @@ class ShowResult(QWidget):
         self.arrowImage=None
         self.drawRobot(self.curPosition)
         self.objectSpotInstance=[] # Object spot을 그릴 때 나오는 리턴값을 저장한다. 방문한 objec spot을 맵 상에서 지울 때 사용
-        for hazardSpot in self.hazardSpot:
-            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
 
+        for hazardSpot in self.hazardSpot:
+            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
 
         for objSpot in self.objectSpot:
-            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)))
+            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)))
 
-        plt.xlim(-1, self.mapSize[0]+1)
-        plt.xticks(np.arange(-1, self.mapSize[0]+1, step=1), color='w')
-        plt.ylim(-1, self.mapSize[1]+1)
-        plt.yticks(np.arange(-1, self.mapSize[1]+1, step=1), color='w')
-        
+        if self.mapSize[0]>10 and self.mapSize[1]>10:
+            self.enlarge=True
+
+        if self.enlarge: # 맵 가로, 세로 길이 둘 다 10 초과
+            print('check!')
+            plt.xlim(-3+self.curPosition[0], 4+self.curPosition[0])
+            plt.xticks(np.arange(-3+self.curPosition[0], 4+self.curPosition[0], step=1))
+        else:
+            plt.xlim(-1, self.mapSize[0]+1)
+            plt.xticks(np.arange(-1, self.mapSize[0]+1, step=1))
+
+        if self.enlarge: # 맵 가로, 세로 길이 둘 다 10 초과
+            plt.ylim(-3 + self.curPosition[1], 4 + self.curPosition[1])
+            plt.yticks(np.arange(-3 + self.curPosition[1], 4 + self.curPosition[1], step=1))
+        else:
+            plt.ylim(-1, self.mapSize[1]+1)
+            plt.yticks(np.arange(-1, self.mapSize[1]+1, step=1))
+
         #맵의 외곽선을 그린다.
         self.drawBorder()
         
-        subLayout1=QVBoxLayout()
-        subLayout1.addWidget(self.canvas)
+        leftLayout=QVBoxLayout()
+        leftLayout.addWidget(self.canvas)
+
+        rightSubLayout=QVBoxLayout()
+        currentPosLabel=QLabel('로봇 좌표')
+        self.currentPosText=QLineEdit(str(self.curPosition))
+        self.currentPosText.setReadOnly(True)
+
+        RobotMovementLabel=QLabel('로봇 동작')
+        self.RobotMovementText=QLineEdit()
+        self.RobotMovementText.setReadOnly(True)
+
+        remainObjectLabel=QLabel('남아있는 목표 지점 갯수')
+        self.remainObjectText=QLineEdit(str(self.objCnt))
+        self.remainObjectText.setReadOnly(True)
+
+        rightSubLayout.addWidget(currentPosLabel)
+        rightSubLayout.addWidget(self.currentPosText)
+        rightSubLayout.addStretch(5)
+
+        rightSubLayout.addWidget(RobotMovementLabel)
+        rightSubLayout.addWidget(self.RobotMovementText)
+        rightSubLayout.addStretch(5)
+
+        rightSubLayout.addWidget(remainObjectLabel)
+        rightSubLayout.addWidget(self.remainObjectText)
+        rightSubLayout.addStretch(5)
+
+        groupbox=QGroupBox('information')
+        groupbox.setLayout(rightSubLayout)
+
+        rightLayout=QVBoxLayout()
+        rightLayout.addStretch(3)
+        rightLayout.addWidget(groupbox)
+
+        rightLayout.addStretch(3)
 
         startButton = QPushButton('start', self)
         startButton.clicked.connect(self.showRobotMovement)
         returnButton = QPushButton('return to menu', self)
         returnButton.clicked.connect(self.close)
 
-        subLayout2 = QHBoxLayout()
-        subLayout2.addWidget(startButton)
-        subLayout2.addWidget(returnButton)
+        topLayout=QHBoxLayout()
+        topLayout.addLayout(leftLayout, 4)
+        topLayout.addLayout(rightLayout, 1)
+
+        bottomLayout = QHBoxLayout()
+        bottomLayout.addWidget(startButton)
+        bottomLayout.addWidget(returnButton)
 
         mainLayout=QVBoxLayout()
-        mainLayout.addLayout(subLayout1)
-        mainLayout.addLayout(subLayout2)
+        mainLayout.addLayout(topLayout)
+        mainLayout.addLayout(bottomLayout)
         self.setLayout(mainLayout)
         self.show()
         self.drawPath()
@@ -221,14 +273,14 @@ class ShowResult(QWidget):
             '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
             if len(hiddenCbList)!=0: #현재 위치 근처에 hidden cb가 존재한다.
                 for pos in hiddenCbList: #리스트에는 color blob의 좌표가 들어있다.
-                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
+                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5, ax=self.mapScreen)
                 self.fig.canvas.draw()
                 self.fig.canvas.flush_events()
 
             '''로봇이 보고있는 방향 바로 앞에 숨겨진 hazard spot을 맵에 표시한다.'''
             if self.ctrlRobot.checkDirection() and hiddenHSpot[0]!=-1:
                 MessageController.showMessage(self, 'notice', 'Robot found Hazard spot!', NOT_CLOSE)
-                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
+                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
                 self.changePath()
                 map_data.MapData.removeHiddenSpot(hiddenHSpot)
                 continue
@@ -242,6 +294,7 @@ class ShowResult(QWidget):
                         self.fig.canvas.flush_events()
                 self.objectSpot.remove(tuple(self.curPosition)) # 방문한 object spot을 MapData의 objectSpot 리스트에서 뺀다.
                 self.objCnt-=1
+                self.remainObjectText.setText(str(self.objCnt))
 
         MessageController.showMessage(self, 'notice', 'robot found all object spot!', NOT_CLOSE)
         map_data.MapData.getBackObjectSpot(self.originalObjectSpot)  # objectSpot 리스트를 처음 입력했던 상태로 돌려놓는다.
@@ -253,15 +306,24 @@ class ShowResult(QWidget):
     
     def commandMovementAndChangePosInfo(self):
         beforePosition=(self.curPosition[0], self.curPosition[1])
-        changedPosition, changedDirection = self.ctrlRobot.commandMovement()  
+        changedPosition, changedDirection = self.ctrlRobot.commandMovement()
+        if changedDirection!=self.curDirection : self.RobotMovementText.setText('회전')
+        if changedDirection==self.curDirection and abs(beforePosition[0]-changedPosition[0]+beforePosition[1]-changedPosition[1])==0:
+            self.RobotMovementText.setText('정지')
         self.curPosition = changedPosition
         self.curDirection = changedDirection
+        self.currentPosText.setText(str(self.curPosition))
         self.drawRobot(self.curPosition)
-        if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])!=0:
+        print('before : ', beforePosition, ', cur : ', self.curPosition, 'dis : ', abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1]))
+
+        if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==1:
             self.ctrlRobot.upPathNum()
+            self.RobotMovementText.setText('앞으로 한 칸 이동')
             
-        if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==2:
+        elif abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==2:
             self.changePath()
+            self.RobotMovementText.setText('앞으로 두 칸 이동')
+
         
 
     def drawRobot(self, test):
@@ -278,12 +340,21 @@ class ShowResult(QWidget):
             self.robotImage.remove()
             self.arrowImage.remove()
 
-        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3/max(self.mapSize[0]/10, 1),
+        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3,
                                             ax=self.mapScreen)
         self.arrowImage = self.imageScatter(self.curPosition[0] + x + self.arrowDirection[self.curDirection][0],
                                             self.curPosition[1] + y + self.arrowDirection[self.curDirection][1], self.arrowFileName[self.curDirection],
-                                            zoom=0.6/max(self.mapSize[0]/10, 1), ax=self.mapScreen)
+                                            zoom=0.6, ax=self.mapScreen)
+
+        if self.enlarge:# 맵 가로, 세로 길이 둘 다 10 초과
+            plt.xlim(-3+self.curPosition[0], 4+self.curPosition[0])
+            plt.xticks(np.arange(-3+self.curPosition[0], 4+self.curPosition[0], step=1))
+
+            plt.ylim(-3 + self.curPosition[1], 4 + self.curPosition[1])
+            plt.yticks(np.arange(-3 + self.curPosition[1], 4 + self.curPosition[1], step=1))
+
         time.sleep(0.7) #1초 간격으로 로봇의 움직임 표현
+
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 

@@ -3,6 +3,7 @@ import map_data
 import sys
 import random
 import copy
+from PyQt5 import uic
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QCoreApplication
@@ -29,7 +30,7 @@ class SaveData(QWidget):
         self.setWindowIcon(QIcon('titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
-
+        
         mapLabel = QLabel("Map : ")
         startLabel = QLabel("Start : ")
         spotLabel = QLabel("Object : ")
@@ -39,8 +40,8 @@ class SaveData(QWidget):
         self.spotLine = QLineEdit("")
         self.hazardLine = QLineEdit("")
 
-        okButton = QPushButton('Save', self)
-        okButton.clicked.connect(self.saveInputData)
+        saveButton = QPushButton('Save', self)
+        saveButton.clicked.connect(self.saveInputData)
         cancelButton = QPushButton('cancel', self)
         cancelButton.clicked.connect(self.close)
 
@@ -53,7 +54,7 @@ class SaveData(QWidget):
         layout1.addWidget(self.spotLine, 2, 1)
         layout1.addWidget(hazardLabel, 3, 0)
         layout1.addWidget(self.hazardLine, 3, 1)
-        layout1.addWidget(okButton, 4, 0)
+        layout1.addWidget(saveButton, 4, 0)
         layout1.addWidget(cancelButton, 4, 1)
 
         self.setLayout(layout1)
@@ -83,7 +84,6 @@ class SaveData(QWidget):
         hazard=list(map(int, hazard))
         objectSpot=[]
         for i in range(0, len(spot), 2):
-
             objectSpot.append(tuple(spot[i:i+2]))
 
         hazardSpot=[]
@@ -91,22 +91,64 @@ class SaveData(QWidget):
             hazardSpot.append(tuple(hazard[i:i+2]))
         map_data.MapData(mapSize, start, objectSpot, hazardSpot)
         MessageController.showMessage(self, 'notice', 'Save Completed.', CLOSE)
-
+    
 class ShowMapData(QWidget):
     def __init__(self):
         super().__init__()
-        mapSize=map_data.MapData.getMapSize()
-        startSpot=map_data.MapData.getStartSpot()
-        objectSpot=map_data.MapData.getObjectSpot()
-        hazardSpot=map_data.MapData.getHazardSpot()
-        print(mapSize, startSpot, objectSpot, hazardSpot)
+        self.mapSize=map_data.MapData.getMapSize()
+        self.startSpot=map_data.MapData.getStartSpot()
+        self.objectSpot=map_data.MapData.getObjectSpot()
+        self.hazardSpot=map_data.MapData.getHazardSpot()
 
         self.setWindowTitle("Show map data")
         self.setWindowIcon(QIcon('titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
-        self.show()
 
+        subLayout=QGridLayout()
+
+        mapSizeLabel=QLabel('Map size : ')
+        mapSizeText=QLineEdit(str(self.mapSize))
+        mapSizeText.setReadOnly(True)
+        mapSizeText.setStyleSheet('background:rgb(176, 191, 197)') # qLineEdit 색 변경. 참조 사이트 : http://blog.naver.com/PostView.nhn?blogId=bringblingme&logNo=221544905595&redirect=Dlog&widgetTypeCall=true&directAccess=false
+
+        startSpotLabel=QLabel('start spot : ')
+        startSpotText=QLineEdit(str(self.startSpot))
+        startSpotText.setReadOnly(True)
+        startSpotText.setStyleSheet('background:rgb(176, 191, 197)')
+
+        objectSpotLabel=QLabel('object spot : ')
+        objectSpotText=QLineEdit(str(self.objectSpot))
+        objectSpotText.setReadOnly(True)
+        objectSpotText.setStyleSheet('background:rgb(176, 191, 197)')
+
+        hazardSpotLabel=QLabel('hazard spot : ')
+        hazardSpotText=QLineEdit(str(self.hazardSpot))
+        hazardSpotText.setReadOnly(True)
+        hazardSpotText.setStyleSheet('background:rgb(176, 191, 197)')
+
+        subLayout.addWidget(mapSizeLabel, 0, 0)
+        subLayout.addWidget(mapSizeText, 0, 1)
+        subLayout.addWidget(startSpotLabel, 1, 0)
+        subLayout.addWidget(startSpotText, 1, 1)
+        subLayout.addWidget(objectSpotLabel, 2, 0)
+        subLayout.addWidget(objectSpotText, 2, 1)
+        subLayout.addWidget(hazardSpotLabel, 3, 0)
+        subLayout.addWidget(hazardSpotText, 3, 1)
+
+        groupbox=QGroupBox('information')
+        groupbox.setStyleSheet('QGroupBox:title {'
+                 'subcontrol-origin: margin;'
+                 'subcontrol-position: top center;'
+                 'padding-left: 10px;'
+                 'padding-right: 10px;'
+                 'font-size: 16pt;}')
+        groupbox.setLayout(subLayout)
+
+        mainLayout=QVBoxLayout()
+        mainLayout.addWidget(groupbox)
+        self.setLayout(mainLayout)
+        self.show()
 
 class ShowResult(QWidget):
     def __init__(self):
@@ -194,14 +236,17 @@ class ShowResult(QWidget):
         currentPosLabel=QLabel('로봇 좌표')
         self.currentPosText=QLineEdit(str(self.curPosition))
         self.currentPosText.setReadOnly(True)
+        self.currentPosText.setStyleSheet('background:rgb(176, 191, 197)')
 
         RobotMovementLabel=QLabel('로봇 동작')
         self.RobotMovementText=QLineEdit()
         self.RobotMovementText.setReadOnly(True)
+        self.RobotMovementText.setStyleSheet('background:rgb(176, 191, 197)')
 
         remainObjectLabel=QLabel('남아있는 목표 지점 갯수')
         self.remainObjectText=QLineEdit(str(self.objCnt))
         self.remainObjectText.setReadOnly(True)
+        self.remainObjectText.setStyleSheet('background:rgb(176, 191, 197)')
 
         rightSubLayout.addWidget(currentPosLabel)
         rightSubLayout.addWidget(self.currentPosText)
@@ -262,12 +307,19 @@ class ShowResult(QWidget):
         return ax.add_artist(artist)
 
     def changePath(self):
+        print('create start!')
+        start1=time.time()
         self.ctrlPath.createPath(self.curPosition)
+        print('create end! time : ', time.time()-start1)
         self.path=self.ctrlPath.getPath()
+        print('draw start!')
+        start2 = time.time()
         self.drawPath()
+        print('draw end! time : ', time.time()-start2)
 
     def showRobotMovement(self):
         while self.objCnt!=0:
+            hazardFound=False
             hiddenCbList, hiddenHSpot=self.ctrlRobot.getSensorInfo()
 
             '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
@@ -282,10 +334,11 @@ class ShowResult(QWidget):
                 MessageController.showMessage(self, 'notice', 'Robot found Hazard spot!', NOT_CLOSE)
                 self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
                 self.changePath()
+                hazardFound=True
                 map_data.MapData.removeHiddenSpot(hiddenHSpot)
                 continue
 
-            self.commandMovementAndChangePosInfo()
+            self.commandMovementAndChangePosInfo(hazardFound)
             if tuple(self.curPosition) in self.objectSpot:
                 for spot, objectImageInstance in self.objectSpotInstance:
                     if spot==tuple(self.curPosition):
@@ -304,29 +357,35 @@ class ShowResult(QWidget):
     #commandMovementAndChangePosInfo() : 로봇의 움직임을 지시하고 움직임이 끝난 뒤 현재 로봇의 위치 정보, 방향 정보를 받아 curPosition, curDirection을 수정한다.
     #                                    기존에 맵에 있던 로봇을 지우고 움직인 위치에 로봇을 다시 그린다.
     
-    def commandMovementAndChangePosInfo(self):
+    def commandMovementAndChangePosInfo(self, hazardFound):
         beforePosition=(self.curPosition[0], self.curPosition[1])
         changedPosition, changedDirection = self.ctrlRobot.commandMovement()
-        if changedDirection!=self.curDirection : self.RobotMovementText.setText('회전')
+        isTwoStep=False
+        if changedDirection!=self.curDirection :
+            print('dir check!!!!!')
+            self.RobotMovementText.setText('회전')
+            
         if changedDirection==self.curDirection and abs(beforePosition[0]-changedPosition[0]+beforePosition[1]-changedPosition[1])==0:
             self.RobotMovementText.setText('정지')
         self.curPosition = changedPosition
         self.curDirection = changedDirection
         self.currentPosText.setText(str(self.curPosition))
-        self.drawRobot(self.curPosition)
         print('before : ', beforePosition, ', cur : ', self.curPosition, 'dis : ', abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1]))
 
         if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==1:
+            print('one step!!!')
             self.ctrlRobot.upPathNum()
             self.RobotMovementText.setText('앞으로 한 칸 이동')
             
         elif abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==2:
-            self.changePath()
+            isTwoStep=True
             self.RobotMovementText.setText('앞으로 두 칸 이동')
 
+        isChangePath=hazardFound+isTwoStep
+        self.drawRobot(self.curPosition, changePath=isChangePath)
         
 
-    def drawRobot(self, test):
+    def drawRobot(self, test, changePath=False): # changePath
         moveDirection = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         if test==self.curPosition: #처음 시작할 때
             x = test[0] - self.curPosition[0]
@@ -352,11 +411,16 @@ class ShowResult(QWidget):
 
             plt.ylim(-3 + self.curPosition[1], 4 + self.curPosition[1])
             plt.yticks(np.arange(-3 + self.curPosition[1], 4 + self.curPosition[1], step=1))
+        if not changePath or self.mapSize[0]+self.mapSize[1]<300 : time.sleep(0.7) # 0.7초 간격으로 로봇의 움직임 표현.
+                                                                                   # 맵의 가로, 세로 합이 300 이상이고 경로를 다시 그렸을 때는
+                                                                                   # 경로를 다시 그리는게 오래 걸리므로 딜레이를 없앤다.
+        if changePath:
+            self.changePath()
 
-        time.sleep(0.7) #1초 간격으로 로봇의 움직임 표현
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
 
     def generateRandomSpot(self):
         visibleHazardSpot=map_data.MapData.getHazardSpot() # 맵 상에 보이는 위험 지역 좌표
@@ -445,25 +509,41 @@ class ShowResult(QWidget):
     def drawPath(self):
         if len(self.drawedLines)!=0:
             self.removePath()
+        print('len : ', len(self.path))
+        print('change path : ', self.path)
+        dist=(0, 0)
+        i=1
+        while True:
+            print('i : ', i)
+            if i==len(self.path) : break
+            prev=self.path[i-1]
+            next=self.path[i]
+            dist = (next[0]-prev[0], next[1]-prev[1])
+            print('dist : ', dist)
+            while i<len(self.path)-1 and dist==(self.path[i+1][0]-self.path[i][0], self.path[i+1][1]-self.path[i][1]):
+                i+=1
+                next = self.path[i]
 
-        for i in range(len(self.path)-1):
-            x=self.path[i+1][0]-self.path[i][0]
-            y=self.path[i+1][1]-self.path[i][1]
-
+            x=next[0]-prev[0]
+            y=next[1]-prev[1]
+            print('prev : ', prev, 'next : ', next)
+            print('x : ', x, ' y : ', y)
             if(x==0) :
-                if(self.path[i][1]<self.path[i+1][1]) :
-                    lines=self.mapScreen.plot([self.path[i][0]]*(y+1), np.linspace(self.path[i][1], self.path[i+1][1], y+1), 'r', linewidth=5)
+                if(prev[1]<next[1]) :
+                    lines=self.mapScreen.plot([prev[0]]*(y+1), np.linspace(prev[1], next[1], y+1), 'r', linewidth=5)
                 else :
-                    lines=self.mapScreen.plot([self.path[i][0]]*(-(y-1)), np.linspace(self.path[i+1][1], self.path[i][1], -(y-1)), 'r', linewidth=5)
+                    lines=self.mapScreen.plot([prev[0]]*(-(y-1)), np.linspace(next[1], prev[1], -(y-1)), 'r', linewidth=5)
             else :
-                if (self.path[i][0] < self.path[i + 1][0]):
-                    lines=self.mapScreen.plot(np.linspace(self.path[i][0], self.path[i + 1][0], x + 1), [self.path[i][1]] * (x + 1), 'r',
+                if (prev[0] < next[0]):
+                    lines=self.mapScreen.plot(np.linspace(prev[0], next[0], x + 1), [prev[1]] * (x + 1), 'r',
                              linewidth=5)
 
                 else:
-                    lines=self.mapScreen.plot(np.linspace(self.path[i+1][0], self.path[i][0], -(x - 1)), [self.path[i][1]] * -(x - 1), 'r',
+                    lines=self.mapScreen.plot(np.linspace(next[0], prev[0], -(x - 1)), [self.path[i][1]] * -(x - 1), 'r',
                              linewidth=5)
             self.drawedLines+=lines #Memorize current path plot object.
+            prev=self.path[i]
+            i+=1
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -473,7 +553,7 @@ class ShowResult(QWidget):
         for i in range(0, len(self.mapScreen.lines)):
             self.mapScreen.lines[0].remove()
         self.drawBorder()
-
+    
 class ShowMenu(QWidget):
     def __init__(self):
         super().__init__()
@@ -518,13 +598,13 @@ class ShowMenu(QWidget):
         self.setLayout(mainLayout)
         self.show()
 
-
     def saveData(self):
+        print('in')
         self.sd=SaveData()
 
     def showMapData(self):
         try:
-            testAtt=map_data.MapData.getMapSize()
+            testAtt=map_data.MapData.getMapSize() #저장된 맵 데이터가 있는지 확인한다.
         except AttributeError:
             MessageController.showMessage(self, 'error', 'map data doesn\'t exist.', NOT_CLOSE)
             return
@@ -533,7 +613,7 @@ class ShowMenu(QWidget):
 
     def showResult(self):
         try:
-            testAtt=map_data.MapData.getMapSize()
+            testAtt=map_data.MapData.getMapSize() #저장된 맵 데이터가 있는지 확인한다.
         except AttributeError:
             MessageController.showMessage(self, 'error', 'map data doesn\'t exist.', NOT_CLOSE)
             return

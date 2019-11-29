@@ -5,9 +5,10 @@ import random
 import copy
 from PyQt5 import uic
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QRect
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -27,10 +28,15 @@ class SaveData(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Save data")
-        self.setWindowIcon(QIcon('titleIcon.png'))
+        self.setWindowIcon(QIcon('image/titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
         
+        groupBox=QGroupBox('Save map data')
+        groupBox.setAlignment(Qt.AlignCenter)
+        groupBox.setStyleSheet("font: 18pt \"Bahnschrift SemiLight\";\n"
+                               "font-weight: bold;")
+
         mapLabel = QLabel("Map : ")
         startLabel = QLabel("Start : ")
         spotLabel = QLabel("Object : ")
@@ -45,19 +51,27 @@ class SaveData(QWidget):
         cancelButton = QPushButton('cancel', self)
         cancelButton.clicked.connect(self.close)
 
-        layout1 = QGridLayout()
-        layout1.addWidget(mapLabel, 0, 0)
-        layout1.addWidget(self.mapLine, 0, 1)
-        layout1.addWidget(startLabel, 1, 0)
-        layout1.addWidget(self.startLine, 1, 1)
-        layout1.addWidget(spotLabel, 2, 0)
-        layout1.addWidget(self.spotLine, 2, 1)
-        layout1.addWidget(hazardLabel, 3, 0)
-        layout1.addWidget(self.hazardLine, 3, 1)
-        layout1.addWidget(saveButton, 4, 0)
-        layout1.addWidget(cancelButton, 4, 1)
+        WidgetList=[mapLabel, startLabel, spotLabel, hazardLabel, saveButton, cancelButton, self.mapLine, self.startLine, self.spotLine, self.hazardLine]
 
-        self.setLayout(layout1)
+        for wg in WidgetList:
+            wg.setStyleSheet("font: 11pt \"Bahnschrift SemiLight\";")
+
+        gBoxLayout = QGridLayout()
+        gBoxLayout.addWidget(mapLabel, 0, 0)
+        gBoxLayout.addWidget(self.mapLine, 0, 1)
+        gBoxLayout.addWidget(startLabel, 1, 0)
+        gBoxLayout.addWidget(self.startLine, 1, 1)
+        gBoxLayout.addWidget(spotLabel, 2, 0)
+        gBoxLayout.addWidget(self.spotLine, 2, 1)
+        gBoxLayout.addWidget(hazardLabel, 3, 0)
+        gBoxLayout.addWidget(self.hazardLine, 3, 1)
+        gBoxLayout.addWidget(saveButton, 4, 0)
+        gBoxLayout.addWidget(cancelButton, 4, 1)
+
+        groupBox.setLayout(gBoxLayout)
+        mainLayout=QVBoxLayout()
+        mainLayout.addWidget(groupBox)
+        self.setLayout(mainLayout)
         self.show()
 
     def saveInputData(self):
@@ -101,7 +115,7 @@ class ShowMapData(QWidget):
         self.hazardSpot=map_data.MapData.getHazardSpot()
 
         self.setWindowTitle("Show map data")
-        self.setWindowIcon(QIcon('titleIcon.png'))
+        self.setWindowIcon(QIcon('image/titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
 
@@ -137,14 +151,19 @@ class ShowMapData(QWidget):
         subLayout.addWidget(hazardSpotText, 3, 1)
 
         groupbox=QGroupBox('information')
-        groupbox.setStyleSheet('QGroupBox:title {'
-                 'subcontrol-origin: margin;'
-                 'subcontrol-position: top center;'
-                 'padding-left: 10px;'
-                 'padding-right: 10px;'
-                 'font-size: 16pt;}')
+        groupbox.setStyleSheet("font: 18pt \"Bahnschrift SemiLight\";"
+                               "font-weight: bold;")
+        groupbox.setAlignment(Qt.AlignCenter)
         groupbox.setLayout(subLayout)
 
+        labelList=[mapSizeLabel, startSpotLabel, objectSpotLabel, hazardSpotLabel]
+        for label in labelList:
+            label.setStyleSheet("font: 11pt \"Bahnschrift SemiLight\";")
+
+        textList=[mapSizeText, startSpotText, objectSpotText, hazardSpotText]
+        for text in textList:
+            text.setStyleSheet("font: 11pt \"Bahnschrift SemiLight\";"
+                               "background:rgb(176, 191, 197);")
         mainLayout=QVBoxLayout()
         mainLayout.addWidget(groupbox)
         self.setLayout(mainLayout)
@@ -171,7 +190,7 @@ class ShowResult(QWidget):
     def showMap(self):
         self.arrowDirection=[(0, 0.7), (0.4, 0), (0, -0.7), (-0.4, 0)]
         self.curDirection=-1
-        self.arrowFileName=['up.png', 'right.png', 'down.png', 'left.png']
+        self.arrowFileName=['image/up.png', 'image/right.png', 'image/down.png', 'image/left.png']
 
         self.ctrlPath = robot_and_control.ControlPath()  # 경로를 컨트롤하는 클래스 ControlPath의 인스턴스 생성
         self.ctrlPath.createPath(self.curPosition)  # 경로 생성
@@ -191,7 +210,7 @@ class ShowResult(QWidget):
 
         self.ctrlRobot = robot_and_control.ControlRobot(self.curDirection) #로봇을 컨트롤하는 클래스 ControlRobot의 인스턴스 생성
         self.setWindowTitle("Result")
-        self.setWindowIcon(QIcon('titleIcon.png'))
+        self.setWindowIcon(QIcon('image/titleIcon.png'))
         self.resize(1900, 1000)  # width, height
         self.fig=plt.figure()
         self.canvas=FigureCanvas(self.fig)
@@ -203,10 +222,10 @@ class ShowResult(QWidget):
         self.objectSpotInstance=[] # Object spot을 그릴 때 나오는 리턴값을 저장한다. 방문한 objec spot을 맵 상에서 지울 때 사용
 
         for hazardSpot in self.hazardSpot:
-            self.imageScatter(hazardSpot[0], hazardSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+            self.imageScatter(hazardSpot[0], hazardSpot[1], 'image/skull.png', zoom=0.1, ax=self.mapScreen)
 
         for objSpot in self.objectSpot:
-            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'star.png', zoom=0.1, ax=self.mapScreen)))
+            self.objectSpotInstance.append((objSpot, self.imageScatter(objSpot[0], objSpot[1], 'image/star.png', zoom=0.1, ax=self.mapScreen)))
 
         if self.mapSize[0]>10 and self.mapSize[1]>10:
             self.enlarge=True
@@ -234,14 +253,14 @@ class ShowResult(QWidget):
 
         rightSubLayout=QVBoxLayout()
         currentPosLabel=QLabel('로봇 좌표')
-        self.currentPosText=QLineEdit(str(self.curPosition))
+        self.currentPosText=QLineEdit(str(list(self.curPosition)))
         self.currentPosText.setReadOnly(True)
         self.currentPosText.setStyleSheet('background:rgb(176, 191, 197)')
 
-        RobotMovementLabel=QLabel('로봇 동작')
-        self.RobotMovementText=QLineEdit()
-        self.RobotMovementText.setReadOnly(True)
-        self.RobotMovementText.setStyleSheet('background:rgb(176, 191, 197)')
+        robotMovementLabel=QLabel('로봇 동작')
+        self.robotMovementText=QLineEdit()
+        self.robotMovementText.setReadOnly(True)
+        self.robotMovementText.setStyleSheet('background:rgb(176, 191, 197)')
 
         remainObjectLabel=QLabel('남아있는 목표 지점 갯수')
         self.remainObjectText=QLineEdit(str(self.objCnt))
@@ -252,20 +271,30 @@ class ShowResult(QWidget):
         rightSubLayout.addWidget(self.currentPosText)
         rightSubLayout.addStretch(5)
 
-        rightSubLayout.addWidget(RobotMovementLabel)
-        rightSubLayout.addWidget(self.RobotMovementText)
+        rightSubLayout.addWidget(robotMovementLabel)
+        rightSubLayout.addWidget(self.robotMovementText)
         rightSubLayout.addStretch(5)
 
         rightSubLayout.addWidget(remainObjectLabel)
         rightSubLayout.addWidget(self.remainObjectText)
         rightSubLayout.addStretch(5)
 
-        groupbox=QGroupBox('information')
-        groupbox.setLayout(rightSubLayout)
+        groupBox=QGroupBox('information')
+        groupBox.setLayout(rightSubLayout)
+        groupBox.setStyleSheet("font: 18pt \"Bahnschrift SemiLight\";\n"
+                               "font-weight: bold;")
+        groupBox.setAlignment(Qt.AlignCenter)
 
+        labelList=[currentPosLabel, robotMovementLabel, remainObjectLabel]
+        textList=[self.currentPosText, self.robotMovementText, self.remainObjectText]
+        for label in labelList:
+            label.setStyleSheet("font: 11pt \"나눔고딕 bold\";")
+
+        for text in textList:
+            text.setStyleSheet("font: 11pt \"나눔고딕\";")
         rightLayout=QVBoxLayout()
         rightLayout.addStretch(3)
-        rightLayout.addWidget(groupbox)
+        rightLayout.addWidget(groupBox)
 
         rightLayout.addStretch(3)
 
@@ -325,14 +354,14 @@ class ShowResult(QWidget):
             '''인근 지역에 숨겨진 color spot을 맵에 표시한다.'''
             if len(hiddenCbList)!=0: #현재 위치 근처에 hidden cb가 존재한다.
                 for pos in hiddenCbList: #리스트에는 color blob의 좌표가 들어있다.
-                    self.imageScatter(pos[0], pos[1], 'splash.png', zoom=0.5, ax=self.mapScreen)
+                    self.imageScatter(pos[0], pos[1], 'image/splash.png', zoom=0.5, ax=self.mapScreen)
                 self.fig.canvas.draw()
                 self.fig.canvas.flush_events()
 
             '''로봇이 보고있는 방향 바로 앞에 숨겨진 hazard spot을 맵에 표시한다.'''
             if self.ctrlRobot.checkDirection() and hiddenHSpot[0]!=-1:
                 MessageController.showMessage(self, 'notice', 'Robot found Hazard spot!', NOT_CLOSE)
-                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'skull.png', zoom=0.1, ax=self.mapScreen)
+                self.imageScatter(hiddenHSpot[0], hiddenHSpot[1], 'image/skull.png', zoom=0.1, ax=self.mapScreen)
                 self.changePath()
                 hazardFound=True
                 map_data.MapData.removeHiddenSpot(hiddenHSpot)
@@ -363,10 +392,10 @@ class ShowResult(QWidget):
         isTwoStep=False
         if changedDirection!=self.curDirection :
             print('dir check!!!!!')
-            self.RobotMovementText.setText('회전')
+            self.robotMovementText.setText('회전')
             
         if changedDirection==self.curDirection and abs(beforePosition[0]-changedPosition[0]+beforePosition[1]-changedPosition[1])==0:
-            self.RobotMovementText.setText('정지')
+            self.robotMovementText.setText('정지')
         self.curPosition = changedPosition
         self.curDirection = changedDirection
         self.currentPosText.setText(str(self.curPosition))
@@ -375,11 +404,11 @@ class ShowResult(QWidget):
         if abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==1:
             print('one step!!!')
             self.ctrlRobot.upPathNum()
-            self.RobotMovementText.setText('앞으로 한 칸 이동')
+            self.robotMovementText.setText('앞으로 한 칸 이동')
             
         elif abs(beforePosition[0]-self.curPosition[0]+beforePosition[1]-self.curPosition[1])==2:
             isTwoStep=True
-            self.RobotMovementText.setText('앞으로 두 칸 이동')
+            self.robotMovementText.setText('앞으로 두 칸 이동')
 
         isChangePath=hazardFound+isTwoStep
         self.drawRobot(self.curPosition, changePath=isChangePath)
@@ -399,7 +428,7 @@ class ShowResult(QWidget):
             self.robotImage.remove()
             self.arrowImage.remove()
 
-        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'robot.png', zoom=0.3,
+        self.robotImage = self.imageScatter(self.curPosition[0] + x, self.curPosition[1] + y, 'image/robot.png', zoom=0.3,
                                             ax=self.mapScreen)
         self.arrowImage = self.imageScatter(self.curPosition[0] + x + self.arrowDirection[self.curDirection][0],
                                             self.curPosition[1] + y + self.arrowDirection[self.curDirection][1], self.arrowFileName[self.curDirection],
@@ -558,43 +587,49 @@ class ShowMenu(QWidget):
     def __init__(self):
         super().__init__()
         map_data.MapData()  # temp
-        self.setWindowTitle("ADD-ON System")
-        self.setWindowIcon(QIcon('titleIcon.png'))
+        self.setWindowTitle("ADD-ON System 1.0")
+        self.setWindowIcon(QIcon('image/titleIcon.png'))
         self.move(500, 200)  # horizontal, vertical
         self.resize(500, 500)  # width, height
 
-        titleLabel = QLabel('------ADD-ON System------')
-        titleLabel.setAlignment(Qt.AlignCenter)
-        font = titleLabel.font()
-        font.setPointSize(15)
-        titleLabel.setFont(font)
+        groupBox = QGroupBox('ADD-ON System 1.0')
+        groupBox.setStyleSheet("font: 18pt \"Bahnschrift SemiLight\";\n"
+                               "font-weight: bold;")
+        groupBox.setAlignment(Qt.AlignCenter)
 
         saveButton = QPushButton('Save data', self)
         saveButton.clicked.connect(self.saveData)
 
         showResultButton = QPushButton('Show result', self)
         showResultButton.clicked.connect(self.showResult)
+        showResultButton.setGeometry(QRect(80, 180, 241, 61))
+
         showDataButton = QPushButton('Show map data', self)
         showDataButton.clicked.connect(self.showMapData)
-
         quitButton = QPushButton('Quit', self)
         quitButton.clicked.connect(QCoreApplication.instance().quit)
 
         buttonList = [saveButton, showResultButton, showDataButton, quitButton]
         for bt in buttonList:
+            bt.setStyleSheet("font: 14pt \"Bahnschrift SemiLight\";\n"
+                                    "border-top-color: rgb(0, 85, 0);")
             bt.setMinimumHeight(70)
 
-        mainLayout = QVBoxLayout()
-        mainLayout.addWidget(titleLabel)
+        boxLayout = QVBoxLayout()
 
-        mainLayout.addWidget(saveButton)
-        mainLayout.addStretch(3)
-        mainLayout.addWidget(showResultButton)
-        mainLayout.addStretch(3)
-        mainLayout.addWidget(showDataButton)
-        mainLayout.addStretch(3)
-        mainLayout.addWidget(quitButton)
-        mainLayout.addStretch(3)
+        boxLayout.addSpacing(3)
+        boxLayout.addWidget(saveButton)
+        boxLayout.addStretch(3)
+        boxLayout.addWidget(showResultButton)
+        boxLayout.addStretch(3)
+        boxLayout.addWidget(showDataButton)
+        boxLayout.addStretch(3)
+        boxLayout.addWidget(quitButton)
+        boxLayout.addStretch(3)
+        groupBox.setLayout(boxLayout)
+        
+        mainLayout=QVBoxLayout()
+        mainLayout.addWidget(groupBox)
         self.setLayout(mainLayout)
         self.show()
 

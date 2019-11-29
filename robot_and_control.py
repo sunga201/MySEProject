@@ -37,22 +37,18 @@ class SIM:
 
         dir=moveDirection[self.direction]
         checkSpot=((self.position[0]+dir[0], self.position[1]+dir[1]), (self.position[0]+2*dir[0], self.position[1]+2*dir[1]))
-        print('cur position : ', self.position, ' one step : ', checkSpot[0], ' two step : ', checkSpot[1])
         checkE=False
         checkE=self.checkError(checkSpot[0])
         checkE=self.checkError(checkSpot[1])
 
         if checkE==True:
-            print('check!')
             inPlaceProp=1 #바로 앞에 위험 지역이 있을 경우에는 오작동 배제
 
         bugProp=np.random.rand()
         if bugProp>inPlaceProp:
             if bugProp>twoStepProp:
-                print('two step !!!')
                 self.position += 2*np.array(moveDirection[self.direction])
 
-            else : print('no move!!!')
         else:
             self.position+=np.array(moveDirection[self.direction])
 
@@ -199,7 +195,6 @@ class ControlPath:
             nextSpot = objectSpot[minIdx]  # 현재 경로의 목표 지점
             self.aStar(prevSpot, nextSpot)
             chk-=1
-        print('end')
         self.pathInfo.setPath(self.path)
 
 

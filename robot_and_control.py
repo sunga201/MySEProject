@@ -275,7 +275,7 @@ class ControlRobot:
             self.robot.moveForward()
         return self.robot.positioningSensor()
 
-    def upPathNum(self):
+    def incPathNum(self):
         self.pathNum += 1
 
     def getFoundHazardSpot(self):

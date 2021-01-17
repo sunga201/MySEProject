@@ -66,4 +66,9 @@
 
 </br></br>
 ## 실행 방법
-python을 이용해 main_menu.py를 실행하거나, . 메뉴에서 save data를 선택하여 맵 데이터를 저장한 뒤 show map data를 눌러 저장한 데이터를 확인하거나, show result나 show map data를 수행할 수 있습니다.
+1. python을 이용한 실행
+   1. 콘솔 창에 pip install -r requirements.txt
+   2. 콘솔 창에 python main_menu.py
+   
+2. 실행 파일 이용
+   add-on 폴더의 main.exe 파일을 실행합니다. image 폴더는 실행에 필요하므로 main.exe와 동일한 폴더에 두어야 합니다.

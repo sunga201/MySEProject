@@ -50,14 +50,18 @@
 
 ## 팀원
   홍성현 외 1인
-  
-## 담당 업무
 
+ </br></br>
+ 
+## 담당 업무
 > A* 알고리즘을 사용한 길 찾기 알고리즘 제작
 
 > UML을 이용한 설계 산출물 정리
   
 > 전반적인 프로그램 로직 구현
+
+</br></br>
+
 
 ## 사용 언어
  > Python3
@@ -74,7 +78,6 @@
 
 </br></br>
 ## 맵 데이터 입력 형식
- ---------------------------
 <img src="example/입력 서식.png" height="600px" alt="format"></img><br/>
  </br></br>
 ## 실행 예시
@@ -96,7 +99,9 @@
 
 
 시연 영상은 [여기](https://github.com/sunga201/MySEProject/tree/2021/01/17_revise/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%8B%9C%EC%97%B0%20%EC%98%81%EC%83%81)를 참조해주세요.
+
 </br></br>
+
 ## 실행 방법
 1. python을 이용한 실행
    1. 콘솔 창에 pip install -r requirements.txt
@@ -104,6 +109,8 @@
    
 2. 실행 파일 이용
    add-on 폴더의 main.exe 파일을 실행합니다. image 폴더는 실행에 필요하므로 main.exe와 동일한 폴더에 위치해야 합니다.
+
+</br></br>
 
 ## 작업 이력
 [여기](https://github.com/sunga201/MySEProject/blob/2021/01/17_revise/history.md)를 참조해주세요. 

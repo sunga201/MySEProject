@@ -71,4 +71,4 @@
    2. 콘솔 창에 python main_menu.py
    
 2. 실행 파일 이용
-   add-on 폴더의 main.exe 파일을 실행합니다. image 폴더는 실행에 필요하므로 main.exe와 동일한 폴더에 두어야 합니다.
+   add-on 폴더의 main.exe 파일을 실행합니다. image 폴더는 실행에 필요하므로 main.exe와 동일한 폴더에 위치해야 합니다.

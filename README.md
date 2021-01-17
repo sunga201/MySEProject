@@ -47,9 +47,17 @@
 </div>
 </details>
  
-## 사용 기술
+## 사용 언어
  > Python3
- > Pyqt5
+ 
+## 사용 라이브러리 
+ > 내부 로직
+  > * numpy
+  
+ > GUI
+  > * Pyqt5
+  > * matplotlib
+
 
 </br></br>
 ## 실행 예시

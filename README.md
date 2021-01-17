@@ -47,7 +47,22 @@
 </div>
 </details>
  
+## 사용 언어
+ > Python3
+ 
+## 사용 라이브러리 
+ > 내부 로직
+  > * numpy
+  
+ > GUI
+  > * PyQt5
+  > * matplotlib
 
+
+</br></br>
+## 실행 예시
+<img src="example/실행 1.png" height="500px" alt="execute 1"></img><br/>
+<img src="example/실행 2.png" height="500px" alt="execute 2"></img><br/>
 
 </br></br>
 ## 실행 방법

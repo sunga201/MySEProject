@@ -61,9 +61,17 @@
 
 </br></br>
 ## 실행 예시
-<img src="example/실행 1.png" height="500px" alt="execute 1"></img><br/>
-<img src="example/실행 2.png" height="500px" alt="execute 2"></img><br/>
+<img src="example/메인 화면.png" height="400px" alt="main"></img><br/>
+</br>메인 화면</br></br>
+<img src="example/맵 데이터 설정.png" height="400px" alt="map data setting"></img><br/>
+</br>맵 데이터 설정</br></br>
+<img src="example/맵 데이터 확인.png" height="400px" alt="map data"></img><br/>
+</br>설정된 맵 데이터 확인</br></br>
+<img src="example/실행 1.png" height="400px" alt="execute 1"></img><br/>
+<img src="example/실행 2.png" height="400px" alt="execute 2"></img><br/>
+</br>로봇 작동 과정</br>
 
+시연 영상은 [여기](https://github.com/sunga201/MySEProject/tree/2021/01/17_revise/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%8B%9C%EC%97%B0%20%EC%98%81%EC%83%81)를 참조해주세요.
 </br></br>
 ## 실행 방법
 1. python을 이용한 실행

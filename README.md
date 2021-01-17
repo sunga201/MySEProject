@@ -61,14 +61,11 @@
 </br></br>
 ## 맵 데이터 입력 형식
  ---------------------------
- Map : (지도 가로 크기, 지도 세로 크기)</br></br>
- Start : (x 좌표, y 좌표)</br></br>
- Object : ((x 좌표, y 좌표)(x 좌표, y 좌표)...)     ->  목표 지점으로 넣고 싶은 만큼 입력해주세요.</br></br>
- Hazard : ((x 좌표, y 좌표)(x 좌표, y 좌표)...)     ->  위험 지점으로 넣고 싶은 만큼 입력해주세요.</br></br>
+<img src="example/입력 서식.png" height="600px" alt="format"></img><br/>
  </br></br>
 ## 실행 예시
 ### 화면 흐름도
-<img src="example/흐름도.png" height="600px" alt=""></img><br/>
+<img src="example/흐름도.png" height="600px" alt="flow"></img><br/>
 </br>
 ### 메인 화면</br></br>
 <img src="example/메인 화면.png" height="400px" alt="main"></img><br/>

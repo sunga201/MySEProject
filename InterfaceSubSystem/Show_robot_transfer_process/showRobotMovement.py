@@ -2,12 +2,9 @@ from Database.mapAndPathData import MapData
 from RobotSubSystem.Robot_control import robotAndPathController
 from InterfaceSubSystem.Window_design_management.window import WindowDesign
 from InterfaceSubSystem.Map_management.drawMap import DrawMap
-from PyQt5 import uic, QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QCoreApplication, Qt, QRect, QAbstractAnimation
 import numpy as np
-import sys
 import random
 import copy
 import time

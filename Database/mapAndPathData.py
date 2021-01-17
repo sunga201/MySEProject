@@ -1,5 +1,4 @@
 import copy
-import numpy as np
 from abc import *
 
 class IMapInfo(metaclass=ABCMeta):

@@ -1,9 +1,6 @@
 from Database.mapAndPathData import MapData
 from InterfaceSubSystem.Window_design_management.window import WindowDesign
-from PyQt5 import uic, QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QCoreApplication, Qt, QRect, QAbstractAnimation
 # 현재 시스템에 저장중인 맵 데이터를 보여주는 창을 띄워주는 클래스
 class ShowMapData(WindowDesign):
     def __init__(self):

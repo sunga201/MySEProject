@@ -1,9 +1,6 @@
 from Database.mapAndPathData import MapData
 from InterfaceSubSystem.Window_design_management.window import WindowDesign
-from PyQt5 import uic, QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QCoreApplication, Qt, QRect, QAbstractAnimation
 
 CLOSE=1
 NOT_CLOSE=0

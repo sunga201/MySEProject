@@ -46,10 +46,13 @@
     로봇이 오작동을 일으킬 가능성이 있다. 로봇을 한 칸 앞으로 움직이려 했을 때 움직이지 않거나, 두 칸 앞으로 움직일 가능성이 있다. SIM의 positioning sensor로 이와 같은 경우를 탐지할 수 있어야 하며, 그에 맞게 경로를 수정해야 한다.
 </div>
 </details>
+</br></br>
 
 ## 사용 언어
  > Python3
  
+ </br></br>
+
 ## 사용 라이브러리 
  > 내부 로직
   > * numpy
@@ -90,3 +93,6 @@
    
 2. 실행 파일 이용
    add-on 폴더의 main.exe 파일을 실행합니다. image 폴더는 실행에 필요하므로 main.exe와 동일한 폴더에 위치해야 합니다.
+
+## 작업 이력
+[여기](https://github.com/sunga201/MySEProject/blob/2021/01/17_revise/history.md)를 참조해주세요. 

@@ -47,7 +47,14 @@
 </div>
 </details>
  
+## 사용 기술
+ > Python3
+ > Pyqt5
 
+</br></br>
+## 실행 예시
+<img src="example/실행 1.png" height="500px" alt="execute 1"></img><br/>
+<img src="example/실행 2.png" height="500px" alt="execute 2"></img><br/>
 
 </br></br>
 ## 실행 방법

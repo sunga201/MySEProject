@@ -4,10 +4,10 @@ import sys
 import random
 import copy
 import time
-from PyQt5 import uic, QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore,  QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import QCoreApplication, Qt, QRect, QAbstractAnimation
+from PyQt5.QtCore import QCoreApplication, Qt, QAbstractAnimation
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -348,10 +348,10 @@ class DrawMap:
         self.drawPath(path)  # MapData 클래스에 저장된 경로 정보를 바탕으로 맵 상에 경로를 그린다.
 
     def drawBorder(self):  # 맵의 외곽선을 그린다.
-        plt.plot([self.mapSize[1]] * (self.mapSize[0] + 1), 'k', lineWidth=5)  # 위
-        plt.plot([0] * (self.mapSize[0] + 1), 'k', lineWidth=5)  # 아래
-        plt.plot([0] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', lineWidth=5)  # 왼쪽
-        plt.plot([self.mapSize[0]] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', lineWidth=5)  # 오른쪽
+        plt.plot([self.mapSize[1]] * (self.mapSize[0] + 1), 'k', linewidth=5)  # 위
+        plt.plot([0] * (self.mapSize[0] + 1), 'k', linewidth=5)  # 아래
+        plt.plot([0] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', linewidth=5)  # 왼쪽
+        plt.plot([self.mapSize[0]] * (self.mapSize[1] + 1), range(self.mapSize[1] + 1), 'k', linewidth=5)  # 오른쪽
 
     # imageScatter : 맵 상의 좌표 (x, y)에 경로 image에 있는 이미지 파일을 그린다.
     def imageScatter(self, x, y, image, zoom=1, ax=None):

@@ -55,7 +55,7 @@
   > * numpy
   
  > GUI
-  > * Pyqt5
+  > * PyQt5
   > * matplotlib
 
 

@@ -4,7 +4,6 @@ import sys
 import random
 import copy
 import time
-from abc import *
 from PyQt5 import uic, QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QIcon, QPixmap
